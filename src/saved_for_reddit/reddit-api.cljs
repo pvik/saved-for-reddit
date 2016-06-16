@@ -5,30 +5,31 @@
             [cemerick.url :as url])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
-(def client-id "ZZ370hqcmUVsRQ")
-(def redirect-uri "http://127.0.0.1:3449/")
 
-(defn gen-auth-url []
+(defn make-remote-get-call [endpoint]
+  (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
+        ;;enjoy your data
+        (js/console.log (:body response)))))
+
+(defn make-remote-post-call [endpoint]
+  (go (let [response (<! (http/post endpoint {:with-credentials? false}))]
+        ;;enjoy your data
+        (js/console.log (:body response)))))
+
+(defn gen-reddit-auth-url [client-id redirect-uri state]
   (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
         query-param  {:client_id client-id
                       :response_type "code"
-                      :state "abcdef"
+                      :state state
                       :redirect_uri redirect-uri
                       :duration "temporary"
                       :scope "save"}]
     (str (assoc cem-url :query query-param))))
 
-(defn make-remote-call [endpoint]
-  (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
+(defn request-reddit-auth-token [code redirect-uri]
+  (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token" {:with-credentials? false
+                                                                                  :form-params {:grant-type "authorization_code"
+                                                                                                :redirect-uri redirect-uri
+                                                                                                :code code}}))]
         ;;enjoy your data
-        (js/console.log (:body response)))))
-
-(defn authorize []
-  (go (let [response (<! (http/get "https://www.reddit.com/api/v1/authorize" {:query-params {:client_id client-id
-                                                                                             :response_type "code"
-                                                                                             :state "abcdef"
-                                                                                             :redirect_uri redirect-uri
-                                                                                             :duration "temporary"
-                                                                                             :scope "save"}
-                                                                              :with-credentials? false }))]
-        (r/render-component response (.getElementById js/document "app")))))
+        (js/console.log response))))
