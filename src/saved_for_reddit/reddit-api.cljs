@@ -23,13 +23,5 @@
                       :state state
                       :redirect_uri redirect-uri
                       :duration "temporary"
-                      :scope "save"}]
+                      :scope "identity,save"}]
     (str (assoc cem-url :query query-param))))
-
-(defn request-reddit-auth-token [code redirect-uri]
-  (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token" {:with-credentials? false
-                                                                                  :form-params {:grant-type "authorization_code"
-                                                                                                :redirect-uri redirect-uri
-                                                                                                :code code}}))]
-        ;;enjoy your data
-        (js/console.log response))))

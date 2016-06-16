@@ -13,7 +13,8 @@
                  [reagent "0.6.0-rc"]
                  [cljs-http "0.1.41"]
                  [com.cemerick/url "0.1.1"]
-                 [domina "1.0.3"]]
+                 [alandipert/storage-atom "1.2.4"]
+                 [prismatic/dommy "1.1.0"]]
   
   :plugins [[lein-figwheel "0.5.4-2"]
             [lein-cljsbuild "1.1.3" :exclusions [[org.clojure/clojure]]]]
