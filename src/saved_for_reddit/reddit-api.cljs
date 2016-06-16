@@ -9,14 +9,14 @@
 (def redirect-uri "http://127.0.0.1:3449/")
 
 (defn gen-auth-url []
-  (let [cem-url (url/url "https://www.reddit.com/api/v1/authoriz"
-                         :query  {:client_id client-id
-                                  :response_type "code"
-                                  :state "abcdef"
-                                  :redirect_uri redirect-uri
-                                  :duration "temporary"
-                                  :scope "save"} )]
-    (str cem-url)))
+  (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
+        query-param  {:client_id client-id
+                      :response_type "code"
+                      :state "abcdef"
+                      :redirect_uri redirect-uri
+                      :duration "temporary"
+                      :scope "save"}]
+    (str (assoc cem-url :query query-param))))
 
 (defn make-remote-call [endpoint]
   (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
