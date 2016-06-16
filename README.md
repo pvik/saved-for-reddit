@@ -1,10 +1,10 @@
 # saved-for-reddit
 
-FIXME: Write a one-line description of your library/project.
+A webapp  to manage and search through all your saved reddit posts
 
 ## Overview
 
-FIXME: Write a paragraph about the library/project and highlight its goals.
+A Single Page Application (SPA) written in Clojurescript to manage and search through all your saved reddit posts
 
 ## Setup
 
