@@ -3,18 +3,19 @@
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
             [cemerick.url :as url]
-            [saved-for-reddit.reddit-api :refer [authorize]])
+            [clojure.walk :refer [keywordize-keys]]
+            [saved-for-reddit.reddit-api :refer [gen-auth-url authorize]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
 
 (println "This text is printed from src/saved-for-reddit/core.cljs. Go ahead and edit it and see reloading in action.")
 
-(println (:query (url/url (-> js/window .-location .-href))))
 ;; define your app data so that it doesn't get over-written on reload
+(def app-state (r/atom {:username ""
+                        :code ""}))
 
-
-(def app-state (r/atom {:username ""}))
+(def error-msg (r/atom ""))
 
 (defn set-app-state-field [field value]
   (swap! app-state update-in [field] #(str value))
@@ -71,8 +72,25 @@
               :on-click authorize}]
      [:div {:id "status"}]]))
 
+(defn error-html []
+  [:div [:h1 "Error"]
+   [:pre @error-msg]])
 
-(r/render-component [login-html] (.getElementById js/document "app"))
+(defn init []
+  (println "Initiazlizing...")
+  (let [query-vars (keywordize-keys (:query (url/url (-> js/window .-location .-href))))
+        code (:code query-vars)
+        error (:error query-vars)]
+    (if (nil? error)
+      (if (nil? code)
+        (set! (.-location js/window) (gen-auth-url))
+        (r/render-component [login-html] (.getElementById js/document "app")))
+      (let [] ;; handling error
+        (swap! error-msg #(str error))
+        (r/render-component [error-html] (.getElementById js/document "app"))))))
+
+;; initialize the HTML page in unobtrusive way
+(set! (.-onload js/window) init)
 
 ;; (defonce app-state (atom {:text "Hello world!"}))
 
