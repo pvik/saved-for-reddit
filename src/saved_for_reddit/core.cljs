@@ -55,11 +55,11 @@
     [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]
      " on " (timef/unparse time-formatter (timec/from-long (* 1000 (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))) ))))]]])
 
-(defn main-html []
+(defn main-html [posts]
   [:div {:class "col-md-12"}
    [:h4 "Saved Posts"]
    [:div {:class "list-group"}
-    (for [p @saved-posts]
+    (for [p @posts]
       [post-html p])]
    [:div {:class "row"}
     [:div {:class "col-md-12"}
@@ -145,7 +145,7 @@
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
-          (r/render-component [main-html] (dommy/sel1 :#app))
+          (r/render-component [main-html saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
               (process-after-token-acquire))
