@@ -31,25 +31,28 @@
   value)
 
 (defn error-html []
-  [:div [:h4 "Error"]
-   [:pre @error-msg]
-   [:input {:type "button" :value "Clear app LocalStorage and refresh!"
-            :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
-                        (set! (.-location js/window) "/"))}]])
+  [:div {:class "row"}
+   [:div {:class "col-md-12"}
+    [:h4 "Error"]
+    [:div {:class "alert alert-danger" :role "alert"}
+     [:pre @error-msg]]
+    [:input {:type "button" :value "Clear app LocalStorage and refresh!"
+             :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
+                         (set! (.-location js/window) "/"))}]]])
 
 (defn post-html [p]
-  [:li
-   [:a {:href (if (nil? (:title p)) (:link_url p) (:url p))}
-    [:span (if (nil? (:title p)) (:link_title p) (:title p))]]
-   [:ul
-    [:li [:span (:subreddit p)]]
-    [:li [:span (:author p)]]]
-   (if (nil? (:title p)) (map hickory/as-hiccup (hickory/parse-fragment (gstring/unescapeEntities (:body_html p)))))])
+  [:div {:class "panel panel-default" :href (if (nil? (:title p)) (:link_url p) (:url p))}
+   [:div {:class "panel-heading"}
+    [:h4 {:class "panel-title"}
+     (if (nil? (:title p)) (:link_title p) (:title p)) " "
+     [:a {:href (str "https://www.reddit.com/r/" (:subreddit p))} [:span {:class "badge"} (:subreddit p)]]]]
+   [:div {:class "panel-body"}
+    [:small  [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]]]])
 
 (defn main-html []
-  [:div
+  [:div {:class "col-md-12"}
    [:h4 "Saved Posts"]
-   [:ol
+   [:div {:class "list-group"}
     (for [p @saved-posts]
       [post-html p])]
    [:p "Reddit API Token: "
@@ -131,7 +134,7 @@
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
-          (r/render-component [main-html] (dommy/sel1 :#status))
+          (r/render-component [main-html] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
               (process-after-token-acquire))
