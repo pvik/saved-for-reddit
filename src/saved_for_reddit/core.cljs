@@ -8,8 +8,8 @@
             [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [goog.string :as gstring]
-            [hickory.core :as hickory])
+            [cljs-time.coerce :as timec]
+            [cljs-time.format :as timef])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -17,6 +17,8 @@
 (def client-id "ZZ370hqcmUVsRQ")
 (def redirect-uri "http://127.0.0.1:3449/")
 (def reddit-api-uri "https://oauth.reddit.com/api/v1/")
+
+(def time-formatter (timef/formatter "yyyy-MM-dd HH:mm"))
 
 ;; define your app data so that it doesn't get over-written on reload
 (def app-state (local-storage (r/atom {:username ""
@@ -48,7 +50,10 @@
       (if (nil? (:title p)) (:link_title p) (:title p))] " "
      [:a {:href (str "https://www.reddit.com/r/" (:subreddit p))} [:span {:class "badge"} (:subreddit p)]]]]
    [:div {:class "panel-body"}
-    [:small  "submitted by " [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]]]])
+    (if (not (clojure.string/blank? (:body p)))
+      [:p (:body p) [:br]])
+    [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]
+     " on " (timef/unparse time-formatter (timec/from-long (* 1000 (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))) ))))]]])
 
 (defn main-html []
   [:div {:class "col-md-12"}
