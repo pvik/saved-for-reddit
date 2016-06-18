@@ -97,13 +97,13 @@
                                    {:with-credentials? false
                                     :oauth-token (:token @app-state)}))
             body  (:body response)
-            error (:error response)]
+            error (:error body)]
         (println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (do
             (set-app-state-field :username (:name body))
             (get-saved-posts))
-          (handle-error error)))))
+          (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
   (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
