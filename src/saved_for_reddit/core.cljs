@@ -37,14 +37,11 @@
   [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
 
 (defn error-html []
-  [:div {:class "row"}
-   [:div {:class "col-md-12"}
-    [:h4 "Error"]
-    [:div {:class "alert alert-danger" :role "alert"}
-     [:pre @error-msg]]
-    [:input {:type "button" :value "Clear app LocalStorage and refresh!"
-             :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
-                         (set! (.-location js/window) "/"))}]]])
+  [:div {:class "alert alert-danger" :role "alert"}
+   [:pre @error-msg]
+   [:input {:type "button" :value "Clear app LocalStorage and refresh!"
+            :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
+                        (set! (.-location js/window) "/"))}]])
 
 (defn post-html [p]
   (let [link? (nil? (:title p))
