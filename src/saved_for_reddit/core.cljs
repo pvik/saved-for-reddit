@@ -43,17 +43,24 @@
                          (set! (.-location js/window) "/"))}]]])
 
 (defn post-html [p]
-  [:div {:class "panel panel-default" :href (if (nil? (:title p)) (:link_url p) (:url p))}
-   [:div {:class "panel-heading"}
-    [:h4 {:class "panel-title"}
-     [:a {:href (if (nil? (:title p)) (:link_url p) (:url p))}
-      (if (nil? (:title p)) (:link_title p) (:title p))] " "
-     [:a {:href (str "https://www.reddit.com/r/" (:subreddit p))} [:span {:class "badge"} (:subreddit p)]]]]
-   [:div {:class "panel-body"}
-    (if (not (clojure.string/blank? (:body p)))
-      [:p (:body p) [:br]])
-    [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]
-     " on " (timef/unparse time-formatter (timec/from-long (* 1000 (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))) ))))]]])
+  (let [link? (nil? (:title p))
+        title (if link? (:link_title p) (:title p))
+        url (if link? (:link_url p) (:url p))
+        body (:body p)
+        subreddit (:subreddit p)
+        author (:author p)
+        created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
+        created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
+    [:div {:class "panel panel-default"}
+     [:div {:class "panel-heading"}
+      [:h4 {:class "panel-title"}
+       [:a {:href url} title] " "
+       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]]
+     [:div {:class "panel-body"}
+      (if (not (clojure.string/blank? body))
+        [:p body [:br]])
+      [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
+       " on " created-on-str]]]))
 
 (defn main-html [posts]
   [:div {:class "col-md-12"}
