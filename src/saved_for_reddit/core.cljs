@@ -44,10 +44,11 @@
   [:div {:class "panel panel-default" :href (if (nil? (:title p)) (:link_url p) (:url p))}
    [:div {:class "panel-heading"}
     [:h4 {:class "panel-title"}
-     (if (nil? (:title p)) (:link_title p) (:title p)) " "
+     [:a {:href (if (nil? (:title p)) (:link_url p) (:url p))}
+      (if (nil? (:title p)) (:link_title p) (:title p))] " "
      [:a {:href (str "https://www.reddit.com/r/" (:subreddit p))} [:span {:class "badge"} (:subreddit p)]]]]
    [:div {:class "panel-body"}
-    [:small  [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]]]])
+    [:small  "submitted by " [:a {:href (str "https://www.reddit.com/user/" (:author p))} [:small (:author p)]]]]])
 
 (defn main-html []
   [:div {:class "col-md-12"}
@@ -55,6 +56,10 @@
    [:div {:class "list-group"}
     (for [p @saved-posts]
       [post-html p])]
+   [:div {:class "row"}
+    [:div {:class "col-md-12"}
+     [:input {:type "button" :value "moar!"
+              :on-click (fn [] (println "get more posts"))}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @app-state) :readOnly "true"}]]
@@ -86,7 +91,7 @@
         (println response)
         (if (clojure.string/blank? error)
           (doseq [p posts]
-            (println (process-json-post p))
+            #_(println (process-json-post p))
             (swap! saved-posts #(conj % %2) (assoc (:data p) :key (-> p :data :id))))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired"))))))
 
