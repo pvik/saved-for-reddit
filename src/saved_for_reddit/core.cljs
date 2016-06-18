@@ -88,7 +88,7 @@
           (doseq [p posts]
             (println (process-json-post p))
             (swap! saved-posts #(conj % %2) (assoc (:data p) :key (-> p :data :id))))
-          (handle-error (str error " " (:error-text response) "\nYour API token might've expired") error)))))
+          (handle-error (str error " " (:error-text response) "\nYour API token might've expired"))))))
 
 (defn process-after-token-acquire []
   (js/console.log "Token acquired...")
@@ -98,7 +98,7 @@
                                    {:with-credentials? false
                                     :oauth-token (:token @app-state)}))
             body  (:body response)
-            error nil #_(:error body)]
+            error (:error body)]
         (println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (do
