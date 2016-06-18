@@ -9,7 +9,8 @@
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
             [cljs-time.coerce :as timec]
-            [cljs-time.format :as timef])
+            [cljs-time.format :as timef]
+            [goog.string :refer [unescapeEntities]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -44,9 +45,9 @@
 
 (defn post-html [p]
   (let [link? (nil? (:title p))
-        title (if link? (:link_title p) (:title p))
+        title (unescapeEntities (if link? (:link_title p) (:title p)))
         url (if link? (:link_url p) (:url p))
-        body (:body p)
+        body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
         subreddit (:subreddit p)
         author (:author p)
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
@@ -57,8 +58,7 @@
        [:a {:href url} title] " "
        [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]]
      [:div {:class "panel-body"}
-      (if (not (clojure.string/blank? body))
-        [:p body [:br]])
+      [:div {:dangerouslySetInnerHTML {:__html body}}]
       [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
        " on " created-on-str]]]))
 
