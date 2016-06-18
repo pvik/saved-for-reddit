@@ -33,6 +33,9 @@
   (swap! app-state update-in [field] #(str value))
   value)
 
+(defn loggedin-html []
+  [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
+
 (defn error-html []
   [:div {:class "row"}
    [:div {:class "col-md-12"}
@@ -74,8 +77,7 @@
               :on-click (fn [] (println "get more posts"))}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
-             :value (:token @app-state) :readOnly "true"}]]
-   [:p "Logged in as " (:username @app-state)]])
+             :value (:token @app-state) :readOnly "true"}]]])
 
 (defn handle-error [error]
   (swap! error-msg #(str error))
@@ -152,6 +154,7 @@
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
+          (r/render-component [loggedin-html] (dommy/sel1 :#loggedin))
           (r/render-component [main-html saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
