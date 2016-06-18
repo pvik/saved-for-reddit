@@ -2,11 +2,14 @@
   (:require [reagent.core :as r :refer [atom]]
             [cljs-http.client :as http]
             [cljs.core.async :refer [<!]]
+            [clojure.core.reducers :as reducers]
             [cemerick.url :as url]
             [clojure.walk :refer [keywordize-keys]]
             [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url]]
             [alandipert.storage-atom :refer [local-storage]]
-            [dommy.core :as dommy])
+            [dommy.core :as dommy]
+            [goog.string :as gstring]
+            [hickory.core :as hickory])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -20,6 +23,7 @@
                                        :token ""})
                               :saved-for-reddit-app-state))
 
+(def saved-posts (r/atom []))
 (def error-msg (r/atom ""))
 
 (defn set-app-state-field [field value]
@@ -33,16 +37,54 @@
             :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
                         (set! (.-location js/window) "/"))}]])
 
+(defn post-html [p]
+  [:li
+   [:a {:href (if (nil? (:title p)) (:link_url p) (:url p))}
+    [:span (if (nil? (:title p)) (:link_title p) (:title p))]]
+   [:ul
+    [:li [:span (:subreddit p)]]
+    [:li [:span (:author p)]]]
+   (if (nil? (:title p)) (map hickory/as-hiccup (hickory/parse-fragment (gstring/unescapeEntities (:body_html p)))))])
+
 (defn main-html []
   [:div
-   [:p "token: "]
-   [:input {:type "text" :id "token" :name "token"
-            :value (:token @app-state) :readOnly "true"}]
+   [:h4 "Saved Posts"]
+   [:ol
+    (for [p @saved-posts]
+      [post-html p])]
+   [:p "Reddit API Token: "
+    [:input {:type "text" :id "token" :name "token"
+             :value (:token @app-state) :readOnly "true"}]]
    [:p "Logged in as " (:username @app-state)]])
 
 (defn handle-error [error]
   (swap! error-msg #(str error))
-  (r/render-component [error-html] (dommy/sel1 :#app)))
+  (r/render-component [error-html] (dommy/sel1 :#error)))
+
+(defn process-json-post [post]
+  (let [p (:data post)
+        id (:id p)
+        title (:title p)
+        subreddit (:subreddit p)
+        permalink (:permalink p)
+        url (:url p)
+        over_i8 (:over_i8 p)
+        author (:author p)]
+    (println id ": " title " by " author " (" url ")")))
+
+(defn get-saved-posts []
+  (js/console.log "Retreiving saved posts...")
+  (go (let [response (<! (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
+                                   {:with-credentials? false
+                                    :oauth-token (:token @app-state)}))
+            posts (-> response :body :data :children)
+            error (:error response)]
+        (println "received response")
+        (if (clojure.string/blank? error)
+          (doseq [p posts]
+            (println (process-json-post p))
+            (swap! saved-posts #(conj % %2) (assoc (:data p) :key (-> p :data :id))))
+          (handle-error error)))))
 
 (defn process-after-token-acquire []
   (js/console.log "Token acquired...")
@@ -53,9 +95,11 @@
                                     :oauth-token (:token @app-state)}))
             body  (:body response)
             error (:error response)]
+        (println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (do
-            (set-app-state-field :username (:name body)))
+            (set-app-state-field :username (:name body))
+            (get-saved-posts))
           (handle-error error)))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
@@ -69,8 +113,8 @@
             body   (:body response)
             error  (:error body)
             access-token (str (:access_token body))]
-        (println body)
-        (if (or (nil? error) (clojure.string/blank? error))
+        (println response) ;; will it block here till body is available?
+        (if  (clojure.string/blank? error)
           (do
             (set-app-state-field :token access-token)
             (process-after-token-acquire))
@@ -87,9 +131,9 @@
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
+          (r/render-component [main-html] (dommy/sel1 :#status))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
-              (r/render-component [main-html] (dommy/sel1 :#app))
               (process-after-token-acquire))
             (request-reddit-auth-token client-id redirect-uri code))))
       (handle-error error))))

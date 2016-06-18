@@ -23,5 +23,5 @@
                       :state state
                       :redirect_uri redirect-uri
                       :duration "temporary"
-                      :scope "identity,save"}]
+                      :scope "history,identity,save"}]
     (str (assoc cem-url :query query-param))))
