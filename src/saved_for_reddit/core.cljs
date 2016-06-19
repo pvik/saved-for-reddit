@@ -28,6 +28,8 @@
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
+(def subreddits (r/atom {}))
+
 (def error-msg (r/atom ""))
 
 (defn set-app-state-field [field value]
@@ -45,6 +47,18 @@
   (swap! error-msg #(str error))
   (r/render-component [error-html] (dommy/sel1 :#error)))
 
+(defn repack-post [p]
+  (let [link? (nil? (:title p))
+        key (str (:name p) (:subreddit_id p) (:link_id p))
+        title (unescapeEntities (if link? (:link_title p) (:title p)))
+        url (if link? (str (:link_url p) key) (:url p))
+        body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
+        subreddit (:subreddit p)
+        author (:author p)
+        permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
+        created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
+        created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
+    {:link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
 
 (defn get-saved-posts [& after]
   (let [saved-post-get-chan (if (nil? after)
@@ -69,23 +83,22 @@
                 (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
               (doseq [p posts]
                 #_(println (process-json-post p))
-                (swap! saved-posts #(conj % %2) (assoc (:data p) :key (str (-> p :data :name) (-> p :data :subreddit_id) (-> p :data :link_id))))))
+                (swap! saved-posts #(conj % %2) (repack-post (:data p)))))
             (handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
 
 (defn loggedin-html []
   [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
 
 (defn post-html [p]
-  (let [link? (nil? (:title p))
+  (let [link? (:link p)
         key (:key p)
-        title (unescapeEntities (if link? (:link_title p) (:title p)))
-        url (if link? (str (:link_url p) key) (:url p))
-        body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
+        title (:title p)
+        url (:url p)
+        body (:body p)
         subreddit (:subreddit p)
         author (:author p)
-        permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
-        created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
-        created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
+        permalink (:permalink p)
+        created-on-str (:created-on p)]
     [:div {:class "panel panel-default"}
      [:div {:class "panel-heading"}
       [:h4 {:class "panel-title"}
@@ -101,7 +114,7 @@
        [:button {:type "button" :class "btn btn-default"} "Unsave"]]]]))
 
 (defn main-html [posts]
-  [:div {:class "col-md-12"}
+  [:div {:class "col-md-10"}
    [:h4 "Saved Posts"]
    [:div {:class "list-group"}
     (for [p @posts]
