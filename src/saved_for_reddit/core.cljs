@@ -8,7 +8,7 @@
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
             [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts set-app-state-field]]
-            [saved-for-reddit.views :refer [handle-error error-html post-html loggedin-html]])
+            [saved-for-reddit.views :refer [handle-error error-html main-html post-html loggedin-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -25,23 +25,7 @@
 
 (def saved-posts (r/atom []))
 
-
-(defn main-html [token username posts]
-  [:div {:class "col-md-10"}
-   [:h4 "Saved Posts " [:span {:class "badge"} (count @posts)] ]
-   [:div {:class "list-group"}
-    (for [p @posts]
-      [post-html p])]
-   [:div {:class "row"}
-    [:div {:class "col-md-12"}
-     [:input {:type "button" :value "moar!"
-              :id "btn-get-posts" :name "btn-get-posts"
-              :on-click (fn [] (println "get more posts") (get-saved-posts token username saved-posts (:after @app-state)) )}]]]
-   [:p "Reddit API Token: "
-    [:input {:type "text" :id "token" :name "token"
-             :value token :readOnly "true"}]]])
-
-(defn get-username []
+(defn get-username [token]
   ;; request username
   (js/console.log "Acquiring username...")
   (go (let [response (<! (http/get (str reddit-api-uri "me")
@@ -51,9 +35,10 @@
             error (:error body)]
         (println response)
         (if (or (nil? error) (clojure.string/blank? error))
-          (do
-            (set-app-state-field :username (:name body))
-            (get-saved-posts (:token @app-state) (:username @app-state) saved-posts))
+          (let [username (:name body)]
+            (set-app-state-field :username username)
+            (r/render-component [loggedin-html username] (dommy/sel1 :#loggedin))
+            (get-saved-posts token username saved-posts))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
@@ -66,12 +51,12 @@
             status (:status response)
             body   (:body response)
             error  (:error body)
-            access-token (str (:access_token body))]
+            access-token (:access_token body)]
         (println response) ;; will it block here till body is available?
         (if  (clojure.string/blank? error)
           (do
             (set-app-state-field :token access-token)
-            (get-username))
+            (get-username access-token))
           (handle-error error)))))
 
 (defn init []
@@ -86,10 +71,10 @@
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
           (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
-          (r/render-component [main-html (:token @app-state) (:username @app-state) saved-posts] (dommy/sel1 :#app))
+          (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
-              (get-username))
+              (get-username (:token @app-state)))
             (request-reddit-auth-token client-id redirect-uri code))))
       (handle-error error))))
 
