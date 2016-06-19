@@ -23,7 +23,8 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 (def app-state (local-storage (r/atom {:username ""
-                                       :token ""})
+                                       :token ""
+                                       :after ""})
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
@@ -33,9 +34,6 @@
   (swap! app-state update-in [field] #(str value))
   value)
 
-(defn loggedin-html []
-  [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
-
 (defn error-html []
   [:div {:class "alert alert-danger" :role "alert"}
    [:pre @error-msg]
@@ -43,10 +41,45 @@
             :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
                         (set! (.-location js/window) "/"))}]])
 
+(defn handle-error [error]
+  (swap! error-msg #(str error))
+  (r/render-component [error-html] (dommy/sel1 :#error)))
+
+
+(defn get-saved-posts [& after]
+  (let [saved-post-get-chan (if (nil? after)
+                              (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token (:token @app-state)})
+                              (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token (:token @app-state)
+                                         :query-params {"after" (first after)}}))]
+    (js/console.log "Retreiving saved posts..." after)
+    (go (let [response (<! saved-post-get-chan )
+              posts (-> response :body :data :children)
+              error (-> response :body :error)
+              after (-> response :body :data :after) ]
+          (println "received response")
+          #_(println response)
+          (if (clojure.string/blank? error)
+            (do
+              (set-app-state-field :after after)
+              (if (clojure.string/blank? after)
+                (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
+              (doseq [p posts]
+                #_(println (process-json-post p))
+                (swap! saved-posts #(conj % %2) (assoc (:data p) :key (str (-> p :data :name) (-> p :data :subreddit_id) (-> p :data :link_id))))))
+            (handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
+
+(defn loggedin-html []
+  [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
+
 (defn post-html [p]
   (let [link? (nil? (:title p))
+        key (:key p)
         title (unescapeEntities (if link? (:link_title p) (:title p)))
-        url (if link? (str (:link_url p) (:key p)) (:url p))
+        url (if link? (str (:link_url p) key) (:url p))
         body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
         subreddit (:subreddit p)
         author (:author p)
@@ -60,7 +93,9 @@
       [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
        " on " created-on-str]]
      [:div {:class "panel-body"}
-      [:div {:dangerouslySetInnerHTML {:__html body}}]]]))
+      [:div {:dangerouslySetInnerHTML {:__html body}}]
+      [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
+       [:button {:type "button" :class "btn btn-default"} "Unsave"]]]]))
 
 (defn main-html [posts]
   [:div {:class "col-md-12"}
@@ -71,14 +106,11 @@
    [:div {:class "row"}
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
-              :on-click (fn [] (println "get more posts"))}]]]
+              :id "btn-get-posts" :name "btn-get-posts"
+              :on-click (fn [] (println "get more posts") (get-saved-posts (:after @app-state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @app-state) :readOnly "true"}]]])
-
-(defn handle-error [error]
-  (swap! error-msg #(str error))
-  (r/render-component [error-html] (dommy/sel1 :#error)))
 
 (defn process-json-post [post]
   (let [p (:data post)
@@ -90,21 +122,6 @@
         over_i8 (:over_i8 p)
         author (:author p)]
     (println id ": " title " by " author " (" url ")")))
-
-(defn get-saved-posts []
-  (js/console.log "Retreiving saved posts...")
-  (go (let [response (<! (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
-                                   {:with-credentials? false
-                                    :oauth-token (:token @app-state)}))
-            posts (-> response :body :data :children)
-            error (-> response :body :error)]
-        (println "received response")
-        (println response)
-        (if (clojure.string/blank? error)
-          (doseq [p posts]
-            #_(println (process-json-post p))
-            (swap! saved-posts #(conj % %2) (assoc (:data p) :key (-> p :data :id))))
-          (handle-error (str error " " (:error-text response) "\nYour API token might've expired"))))))
 
 (defn process-after-token-acquire []
   (js/console.log "Token acquired...")
