@@ -26,7 +26,7 @@
      [:div {:class "panel-heading"}
       [:h4 {:class "panel-title"}
        [:a {:href url} title] " "
-       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]
+       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "label label-default"} subreddit]]]
       [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
        " on " created-on-str]]
      [:div {:class "panel-body"}
@@ -49,7 +49,7 @@
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
               :id "btn-get-posts" :name "btn-get-posts"
-              :on-click (fn [] (println "get more posts") (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) saved-posts (:after @state)) )}]]]
+              :on-click (fn [] (println "get more posts") (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) posts (:after @state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @state) :readOnly "true"}]]])
