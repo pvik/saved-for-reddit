@@ -51,7 +51,7 @@
 
 (defn main-html [state posts]
   [:div {:class "col-md-10"}
-   [:h4 "Saved Posts " [:span {:class "badge"} (count @posts)] ]
+   [:h4  [:img {:id "loading-gif" :src "img/loading.gif"}] " Saved Posts " [:span {:class "badge"} (count @posts)] " "]
    [:div {:class "list-group"}
     (for [p @posts]
       [post-html p])]

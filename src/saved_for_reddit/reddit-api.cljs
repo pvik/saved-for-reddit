@@ -118,6 +118,7 @@
               (if (not (nil? after-ret))
                 (get-all-saved-posts token username saved-posts after-ret)
                 (do
+                  (set! ( .-visibility (.-style (dommy/sel1 :#loading-gif))) "hidden")
                   (set! (.-disabled (dommy/sel1 :#btn-search-posts)) false)
                   (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
                   (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))))
