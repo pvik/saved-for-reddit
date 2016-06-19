@@ -46,7 +46,7 @@
 (defn post-html [p]
   (let [link? (nil? (:title p))
         title (unescapeEntities (if link? (:link_title p) (:title p)))
-        url (if link? (:link_url p) (:url p))
+        url (if link? (str (:link_url p) (:key p)) (:url p))
         body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
         subreddit (:subreddit p)
         author (:author p)
@@ -56,11 +56,11 @@
      [:div {:class "panel-heading"}
       [:h4 {:class "panel-title"}
        [:a {:href url} title] " "
-       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]]
-     [:div {:class "panel-body"}
-      [:div {:dangerouslySetInnerHTML {:__html body}}]
+       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]
       [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
-       " on " created-on-str]]]))
+       " on " created-on-str]]
+     [:div {:class "panel-body"}
+      [:div {:dangerouslySetInnerHTML {:__html body}}]]]))
 
 (defn main-html [posts]
   [:div {:class "col-md-12"}
