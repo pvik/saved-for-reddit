@@ -15,7 +15,6 @@
 
 (def client-id "ZZ370hqcmUVsRQ")
 (def redirect-uri "http://127.0.0.1:3449/")
-(def reddit-api-uri "https://oauth.reddit.com/api/v1/")
 
 ;; save app data in local-storage so that it doesn't get over-written on page reload
 (def app-state (local-storage (r/atom {:username ""
@@ -28,12 +27,12 @@
 (defn get-username [token]
   ;; request username
   (js/console.log "Acquiring username...")
-  (go (let [response (<! (http/get (str reddit-api-uri "me")
+  (go (let [response (<! (http/get "https://oauth.reddit.com/api/v1/me"
                                    {:with-credentials? false
                                     :oauth-token (:token @app-state)}))
             body  (:body response)
             error (:error body)]
-        (println response)
+        #_(println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (let [username (:name body)]
             (set-app-state-field :username username)
@@ -42,6 +41,7 @@
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
+  ;; request reddit api token from code provided by reddit
   (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
                                     {:with-credentials? false
                                      :basic-auth {:username client-id :password ""}
@@ -52,27 +52,30 @@
             body   (:body response)
             error  (:error body)
             access-token (:access_token body)]
-        (println response) ;; will it block here till body is available?
-        (if  (clojure.string/blank? error)
+        #_(println response) ;; will it block here till body is available?
+        (if (clojure.string/blank? error)
           (do
             (set-app-state-field :token access-token)
             (get-username access-token))
           (handle-error error)))))
 
+;; Starting point
+;; making sure reddit api is initialized properly and proceed accordingly
 (defn init []
   (println "Initiazlizing...")
   (println @app-state)
-  (let [query-vars (keywordize-keys (:query (url/url (-> js/window .-location .-href))))
+  (let [query-vars (keywordize-keys (:query (url/url (-> js/window .-location .-href)))) ;; obtain all GET query params, if present
         code (:code query-vars)
         state (:state query-vars)
         error (:error query-vars)]
     (if (nil? error)
+      ;; reddit auth request didnt give an error back
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
           (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
           (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app))
-          (if (not (clojure.string/blank? (:token @app-state)))
+          (if (not (clojure.string/blank? (:token @app-state))) ;; reddit api token already exists in app-state
             (do
               (get-username (:token @app-state)))
             (request-reddit-auth-token client-id redirect-uri code))))
@@ -80,20 +83,6 @@
 
 ;; initialize the HTML page
 (set! (.-onload js/window) init)
-
-;; (defn login-html2 []
-;;   (let [username (r/atom "")
-;;         password (r/atom "")]
-;;     [:form "User: "
-;;      [:input {:type "text" :name "user" :id "user" :on-change #(reset! username (-> % .-target .-value))}]
-;;      [:br]"Password: "
-;;      [:input {:type "password" :name "password" :id "password" :on-change #(reset! password (-> % .-target .-value))}]
-;;      [:br]
-;;      [:input {:type "button" :value "Login" :on-click (fn [] (r/render-component [logging-in (set-app-state-field :username username)]
-;;                                                                                 (.getElementById js/document "status")))}]
-;;      [:div {:id "status"}]]))
-
-;; (defonce app-state (atom {:text "Hello world!"}))
 
 ;; (defn on-js-reload []
 ;;   ;; optionally touch your app-state to force rerendering depending on
