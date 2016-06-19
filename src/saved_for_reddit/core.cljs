@@ -5,12 +5,10 @@
             [clojure.core.reducers :as reducers]
             [cemerick.url :as url]
             [clojure.walk :refer [keywordize-keys]]
-            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [cljs-time.coerce :as timec]
-            [cljs-time.format :as timef]
-            [goog.string :refer [unescapeEntities]])
+            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url repack-post]]
+            [saved-for-reddit.views :refer [handle-error error-html post-html loggedin-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -19,48 +17,21 @@
 (def redirect-uri "http://127.0.0.1:3449/")
 (def reddit-api-uri "https://oauth.reddit.com/api/v1/")
 
-(def time-formatter (timef/formatter "yyyy-MM-dd HH:mm"))
-
-;; define your app data so that it doesn't get over-written on reload
+;; save app data in local-storage so that it doesn't get over-written on page reload
 (def app-state (local-storage (r/atom {:username ""
                                        :token ""
                                        :after ""})
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
-(def subreddits (r/atom {}))
 
-(def error-msg (r/atom ""))
+#_(def error-msg (r/atom ""))
 
 (defn set-app-state-field [field value]
   (swap! app-state update-in [field] #(str value))
   value)
 
-(defn error-html []
-  [:div {:class "alert alert-danger" :role "alert"}
-   [:pre @error-msg]
-   [:input {:type "button" :value "Clear app LocalStorage and refresh!"
-            :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
-                        (set! (.-location js/window) "/"))}]])
-
-(defn handle-error [error]
-  (swap! error-msg #(str error))
-  (r/render-component [error-html] (dommy/sel1 :#error)))
-
-(defn repack-post [p]
-  (let [link? (nil? (:title p))
-        key (str (:name p) (:subreddit_id p) (:link_id p))
-        title (unescapeEntities (if link? (:link_title p) (:title p)))
-        url (if link? (str (:link_url p) key) (:url p))
-        body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
-        subreddit (:subreddit p)
-        author (:author p)
-        permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
-        created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
-        created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
-    {:link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
-
-(defn get-saved-posts [& after]
+(defn get-saved-posts [saved-posts & after]
   (let [saved-post-get-chan (if (nil? after)
                               (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
                                         {:with-credentials? false
@@ -86,36 +57,9 @@
                 (swap! saved-posts #(conj % %2) (repack-post (:data p)))))
             (handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
 
-(defn loggedin-html []
-  [:p {:class "navbar-text navbar-right"} "Logged in as " (:username @app-state)])
-
-(defn post-html [p]
-  (let [link? (:link p)
-        key (:key p)
-        title (:title p)
-        url (:url p)
-        body (:body p)
-        subreddit (:subreddit p)
-        author (:author p)
-        permalink (:permalink p)
-        created-on-str (:created-on p)]
-    [:div {:class "panel panel-default"}
-     [:div {:class "panel-heading"}
-      [:h4 {:class "panel-title"}
-       [:a {:href url} title] " "
-       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "badge"} subreddit]]]
-      [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
-       " on " created-on-str]]
-     [:div {:class "panel-body"}
-      [:div {:dangerouslySetInnerHTML {:__html body}}]
-      [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
-       [:button {:type "button" :class "btn btn-default"
-                 :on-click (fn [] (.open js/window permalink))} "Comments"]
-       [:button {:type "button" :class "btn btn-default"} "Unsave"]]]]))
-
 (defn main-html [posts]
   [:div {:class "col-md-10"}
-   [:h4 "Saved Posts"]
+   [:h4 "Saved Posts " [:span {:class "badge"} (count @posts)] ]
    [:div {:class "list-group"}
     (for [p @posts]
       [post-html p])]
@@ -123,21 +67,10 @@
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
               :id "btn-get-posts" :name "btn-get-posts"
-              :on-click (fn [] (println "get more posts") (get-saved-posts (:after @app-state)) )}]]]
+              :on-click (fn [] (println "get more posts") (get-saved-posts saved-posts (:after @app-state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @app-state) :readOnly "true"}]]])
-
-(defn process-json-post [post]
-  (let [p (:data post)
-        id (:id p)
-        title (:title p)
-        subreddit (:subreddit p)
-        permalink (:permalink p)
-        url (:url p)
-        over_i8 (:over_i8 p)
-        author (:author p)]
-    (println id ": " title " by " author " (" url ")")))
 
 (defn process-after-token-acquire []
   (js/console.log "Token acquired...")
@@ -152,7 +85,7 @@
         (if (or (nil? error) (clojure.string/blank? error))
           (do
             (set-app-state-field :username (:name body))
-            (get-saved-posts))
+            (get-saved-posts saved-posts))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
@@ -184,7 +117,7 @@
       (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
-          (r/render-component [loggedin-html] (dommy/sel1 :#loggedin))
+          (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
           (r/render-component [main-html saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
