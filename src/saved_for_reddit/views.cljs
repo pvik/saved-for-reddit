@@ -39,6 +39,18 @@
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
 
+#_(defn search-bar-html []
+    [:input {:type "text" :class "form-control" :placeholder "Search..."}]
+    [:button {:type "submit" :class "btn btn-default"} [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]
+    )
+
+(defn search-bar-html []
+  [:form {:class "navbar-form navbar-left" :role "search"}
+   [:div {:class "form-group"}
+    [:input {:id "txt-search" :type "text" :class "form-control" :placeholder "Search..."}]]
+   [:button {:id "btn-search" :type "submit" :class "btn btn-primary"}
+    [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]])
+
 (defn main-html [state posts]
   [:div {:class "col-md-10"}
    [:h4 "Saved Posts " [:span {:class "badge"} (count @posts)] ]

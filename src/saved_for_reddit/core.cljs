@@ -8,7 +8,7 @@
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
             [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts set-app-state-field]]
-            [saved-for-reddit.views :refer [handle-error error-html main-html post-html loggedin-html]])
+            [saved-for-reddit.views :refer [handle-error error-html main-html post-html loggedin-html search-bar-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -74,6 +74,7 @@
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
           (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
+          (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
           (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state))) ;; reddit api token already exists in app-state
             (do
