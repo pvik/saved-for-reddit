@@ -5,9 +5,8 @@
 (defn error-html [error]
   [:div {:class "alert alert-danger" :role "alert"}
    [:pre error]
-   [:input {:type "button" :value "Clear app LocalStorage and refresh!"
-            :on-click (fn [] (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
-                        (set! (.-location js/window) "/"))}]])
+   [:input {:type "button" :value "Clear app LocalStorage and reload!"
+            :on-click #(saved-for-reddit.core/clear-and-refresh-app)}]])
 
 (defn handle-error [error]
   (r/render-component [error-html error] (dommy/sel1 :#error)))
@@ -39,17 +38,16 @@
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
 
-#_(defn search-bar-html []
-    [:input {:type "text" :class "form-control" :placeholder "Search..."}]
-    [:button {:type "submit" :class "btn btn-default"} [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]
-    )
-
 (defn search-bar-html []
   [:form {:class "navbar-form navbar-left" :role "search"}
    [:div {:class "form-group"}
     [:input {:id "txt-search-posts" :type "text" :class "form-control" :placeholder "Loading..." :disabled true}]]
    [:button {:id "btn-search-posts" :type "submit" :class "btn btn-primary" :disabled true}
-    [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]])
+    [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]
+   [:button {:id "btn-refresh" :type "submit" :class "btn btn-primary"
+             :on-click #(saved-for-reddit.core/clear-and-refresh-app)}
+    [:span {:class "glyphicon glyphicon-refresh" :aria-hidden "true"}]]
+   ])
 
 (defn main-html [state posts]
   [:div {:class "col-md-10"}

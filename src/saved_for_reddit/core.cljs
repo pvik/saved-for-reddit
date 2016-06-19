@@ -33,6 +33,10 @@
 
 (def saved-posts (r/atom []))
 
+(defn clear-and-refresh-app []
+  (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
+  (set! (.-location js/window) "/"))
+
 (defn get-username [token]
   ;; request username
   (js/console.log "Acquiring username...")
