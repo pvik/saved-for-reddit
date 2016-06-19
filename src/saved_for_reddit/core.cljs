@@ -32,6 +32,7 @@
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
+(def get-posts? (r/atom true))
 
 (defn clear-and-refresh-app []
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)

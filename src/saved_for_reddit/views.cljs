@@ -33,7 +33,7 @@
       [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
        [:button {:type "button" :class "btn btn-default"
                  :on-click (fn [] (.open js/window permalink))} "Comments"]
-       [:button {:type "button" :class "btn btn-default"} "Unsave"]]]]))
+       [:button {:type "button" :class "btn btn-default" :disabled true} "Unsave"]]]]))
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
@@ -46,12 +46,19 @@
     [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]
    [:button {:id "btn-refresh" :type "submit" :class "btn btn-primary"
              :on-click #(saved-for-reddit.core/clear-and-refresh-app)}
-    [:span {:class "glyphicon glyphicon-refresh" :aria-hidden "true"}]]
+    [:span {:class "glyphicon glyphicon-refresh" :aria-hidden "true"}]  ]
    ])
 
 (defn main-html [state posts]
   [:div {:class "col-md-10"}
-   [:h4  [:img {:id "loading-gif" :src "img/loading.gif"}] " Saved Posts " [:span {:class "badge"} (count @posts)] " "]
+   [:h4
+    [:img {:id "loading-gif" :src "img/loading.gif"}]
+    " Saved Posts "
+    [:span {:class "badge"} (count @posts)] " "
+    [:button {:id "btn-stop-get-posts" :type "submit" :class "btn btn-primary btn-xs"
+              :on-click (fn []
+                          (swap! saved-for-reddit.core/get-posts? not))}
+     [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]]
    [:div {:class "list-group"}
     (for [p @posts]
       [post-html p])]

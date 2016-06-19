@@ -94,6 +94,13 @@
               after-ret)
             (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
 
+(defn update-view-after-retreive-complete []
+  (set! ( .-visibility (.-style (dommy/sel1 :#btn-stop-get-posts))) "hidden")
+  (set! ( .-visibility (.-style (dommy/sel1 :#loading-gif))) "hidden")
+  (set! (.-disabled (dommy/sel1 :#btn-search-posts)) false)
+  (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
+  (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))
+
 (defn get-all-saved-posts [token username saved-posts & after]
   (let [saved-post-get-chan (if (nil? after)
                               (http/get (str "https://oauth.reddit.com/user/" username "/saved")
@@ -104,7 +111,9 @@
                                          :oauth-token token
                                          :query-params {"after" (first after)}}))]
     (js/console.log "Retreiving saved posts... from" after)
-    (go (let [response (<! saved-post-get-chan )
+    (go
+      (if @saved-for-reddit.core/get-posts?
+        (let [response (<! saved-post-get-chan )
               posts (-> response :body :data :children)
               error (-> response :body :error)
               after-str (-> response :body :data :after)
@@ -117,9 +126,6 @@
                 (swap! saved-posts #(conj % %2) (repack-post (:data p))))
               (if (not (nil? after-ret))
                 (get-all-saved-posts token username saved-posts after-ret)
-                (do
-                  (set! ( .-visibility (.-style (dommy/sel1 :#loading-gif))) "hidden")
-                  (set! (.-disabled (dommy/sel1 :#btn-search-posts)) false)
-                  (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
-                  (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))))
-            (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
+                (update-view-after-retreive-complete)))
+            (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired"))))
+        (update-view-after-retreive-complete)))))
