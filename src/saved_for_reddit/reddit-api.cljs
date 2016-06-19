@@ -63,13 +63,44 @@
     (go (let [response (<! saved-post-get-chan )
               posts (-> response :body :data :children)
               error (-> response :body :error)
-              after (-> response :body :data :after) ]
+              after-str (-> response :body :data :after)
+              after-ret (if (clojure.string/blank? after-str) nil after-str)]
           (println "received response")
           (if (clojure.string/blank? error)
             (do
-              (set-app-state-field :after after)
-              (if (clojure.string/blank? after)
+              (set-app-state-field :after after-ret)
+              (if (nil? after-ret)
                 (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
               (doseq [p posts]
-                (swap! saved-posts #(conj % %2) (repack-post (:data p)))))
+                (swap! saved-posts #(conj % %2) (repack-post (:data p))))
+              after-ret)
+            (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
+
+(defn get-all-saved-posts [token username saved-posts & after]
+  (let [saved-post-get-chan (if (nil? after)
+                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token token})
+                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token token
+                                         :query-params {"after" (first after)}}))]
+    (js/console.log "Retreiving saved posts... from" after)
+    (go (let [response (<! saved-post-get-chan )
+              posts (-> response :body :data :children)
+              error (-> response :body :error)
+              after-str (-> response :body :data :after)
+              after-ret (if (clojure.string/blank? after-str) nil after-str)]
+          (println "received response..." after-ret)
+          (if (clojure.string/blank? error)
+            (do
+              #_(set-app-state-field :after after-ret)
+              (doseq [p posts]
+                (swap! saved-posts #(conj % %2) (repack-post (:data p))))
+              (if (not (nil? after-ret))
+                (get-all-saved-posts token username saved-posts after-ret)
+                (do
+                  (set! (.-disabled (dommy/sel1 :#btn-search-posts)) false)
+                  (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
+                  (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))))
             (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))

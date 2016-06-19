@@ -47,8 +47,8 @@
 (defn search-bar-html []
   [:form {:class "navbar-form navbar-left" :role "search"}
    [:div {:class "form-group"}
-    [:input {:id "txt-search" :type "text" :class "form-control" :placeholder "Search..."}]]
-   [:button {:id "btn-search" :type "submit" :class "btn btn-primary"}
+    [:input {:id "txt-search-posts" :type "text" :class "form-control" :placeholder "Loading..." :disabled true}]]
+   [:button {:id "btn-search-posts" :type "submit" :class "btn btn-primary" :disabled true}
     [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]])
 
 (defn main-html [state posts]

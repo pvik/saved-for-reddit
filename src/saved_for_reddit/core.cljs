@@ -7,7 +7,7 @@
             [clojure.walk :refer [keywordize-keys]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts set-app-state-field]]
+            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts get-all-saved-posts set-app-state-field]]
             [saved-for-reddit.views :refer [handle-error error-html main-html post-html loggedin-html search-bar-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -19,7 +19,7 @@
 ;; save app data in local-storage so that it doesn't get over-written on page reload
 (def app-state (local-storage (r/atom {:username ""
                                        :token ""
-                                       :after ""})
+                                       :after nil})
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
@@ -37,7 +37,7 @@
           (let [username (:name body)]
             (set-app-state-field :username username)
             (r/render-component [loggedin-html username] (dommy/sel1 :#loggedin))
-            (get-saved-posts token username saved-posts))
+            (get-all-saved-posts token username saved-posts))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
