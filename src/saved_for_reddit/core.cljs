@@ -83,6 +83,7 @@
         body (if (not (nil? (:body_html p))) (unescapeEntities (:body_html p)))
         subreddit (:subreddit p)
         author (:author p)
+        permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
     [:div {:class "panel panel-default"}
@@ -95,6 +96,8 @@
      [:div {:class "panel-body"}
       [:div {:dangerouslySetInnerHTML {:__html body}}]
       [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
+       [:button {:type "button" :class "btn btn-default"
+                 :on-click (fn [] (.open js/window permalink))} "Comments"]
        [:button {:type "button" :class "btn btn-default"} "Unsave"]]]]))
 
 (defn main-html [posts]
