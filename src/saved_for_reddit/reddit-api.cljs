@@ -5,11 +5,17 @@
             [cemerick.url :as url]
             [cljs-time.coerce :as timec]
             [cljs-time.format :as timef]
-            [goog.string :refer [unescapeEntities]] )
+            [dommy.core :as dommy]
+            [goog.string :refer [unescapeEntities]]
+            [saved-for-reddit.views :as views])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 ;; a global time-formatter to handle how time strings are displayed
 (def time-formatter (timef/formatter "yyyy-MM-dd HH:mm"))
+
+(defn set-app-state-field [field value]
+  (swap! saved-for-reddit.core/app-state update-in [field] #(str value))
+  value)
 
 (defn make-remote-get-call [endpoint]
   (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
@@ -43,3 +49,27 @@
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
     {:link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
+
+(defn get-saved-posts [token username saved-posts & after]
+  (let [saved-post-get-chan (if (nil? after)
+                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token token})
+                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
+                                        {:with-credentials? false
+                                         :oauth-token token
+                                         :query-params {"after" (first after)}}))]
+    (js/console.log "Retreiving saved posts..." after)
+    (go (let [response (<! saved-post-get-chan )
+              posts (-> response :body :data :children)
+              error (-> response :body :error)
+              after (-> response :body :data :after) ]
+          (println "received response")
+          (if (clojure.string/blank? error)
+            (do
+              (set-app-state-field :after after)
+              (if (clojure.string/blank? after)
+                (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
+              (doseq [p posts]
+                (swap! saved-posts #(conj % %2) (repack-post (:data p)))))
+            (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))

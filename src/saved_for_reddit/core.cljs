@@ -7,7 +7,7 @@
             [clojure.walk :refer [keywordize-keys]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url repack-post]]
+            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts set-app-state-field]]
             [saved-for-reddit.views :refer [handle-error error-html post-html loggedin-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
@@ -25,39 +25,8 @@
 
 (def saved-posts (r/atom []))
 
-#_(def error-msg (r/atom ""))
 
-(defn set-app-state-field [field value]
-  (swap! app-state update-in [field] #(str value))
-  value)
-
-(defn get-saved-posts [saved-posts & after]
-  (let [saved-post-get-chan (if (nil? after)
-                              (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
-                                        {:with-credentials? false
-                                         :oauth-token (:token @app-state)})
-                              (http/get (str "https://oauth.reddit.com/user/" (:username @app-state) "/saved")
-                                        {:with-credentials? false
-                                         :oauth-token (:token @app-state)
-                                         :query-params {"after" (first after)}}))]
-    (js/console.log "Retreiving saved posts..." after)
-    (go (let [response (<! saved-post-get-chan )
-              posts (-> response :body :data :children)
-              error (-> response :body :error)
-              after (-> response :body :data :after) ]
-          (println "received response")
-          #_(println response)
-          (if (clojure.string/blank? error)
-            (do
-              (set-app-state-field :after after)
-              (if (clojure.string/blank? after)
-                (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
-              (doseq [p posts]
-                #_(println (process-json-post p))
-                (swap! saved-posts #(conj % %2) (repack-post (:data p)))))
-            (handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
-
-(defn main-html [posts]
+(defn main-html [token username posts]
   [:div {:class "col-md-10"}
    [:h4 "Saved Posts " [:span {:class "badge"} (count @posts)] ]
    [:div {:class "list-group"}
@@ -67,13 +36,12 @@
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
               :id "btn-get-posts" :name "btn-get-posts"
-              :on-click (fn [] (println "get more posts") (get-saved-posts saved-posts (:after @app-state)) )}]]]
+              :on-click (fn [] (println "get more posts") (get-saved-posts token username saved-posts (:after @app-state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
-             :value (:token @app-state) :readOnly "true"}]]])
+             :value token :readOnly "true"}]]])
 
-(defn process-after-token-acquire []
-  (js/console.log "Token acquired...")
+(defn get-username []
   ;; request username
   (js/console.log "Acquiring username...")
   (go (let [response (<! (http/get (str reddit-api-uri "me")
@@ -85,7 +53,7 @@
         (if (or (nil? error) (clojure.string/blank? error))
           (do
             (set-app-state-field :username (:name body))
-            (get-saved-posts saved-posts))
+            (get-saved-posts (:token @app-state) (:username @app-state) saved-posts))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn request-reddit-auth-token [client-id redirect-uri code]
@@ -103,7 +71,7 @@
         (if  (clojure.string/blank? error)
           (do
             (set-app-state-field :token access-token)
-            (process-after-token-acquire))
+            (get-username))
           (handle-error error)))))
 
 (defn init []
@@ -118,10 +86,10 @@
         (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
         (do
           (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
-          (r/render-component [main-html saved-posts] (dommy/sel1 :#app))
+          (r/render-component [main-html (:token @app-state) (:username @app-state) saved-posts] (dommy/sel1 :#app))
           (if (not (clojure.string/blank? (:token @app-state)))
             (do
-              (process-after-token-acquire))
+              (get-username))
             (request-reddit-auth-token client-id redirect-uri code))))
       (handle-error error))))
 
