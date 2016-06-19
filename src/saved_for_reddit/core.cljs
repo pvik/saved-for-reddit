@@ -7,8 +7,17 @@
             [clojure.walk :refer [keywordize-keys]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url get-saved-posts get-all-saved-posts set-app-state-field]]
-            [saved-for-reddit.views :refer [handle-error error-html main-html post-html loggedin-html search-bar-html]])
+            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url
+                                                 refresh-reddit-auth-token
+                                                 get-saved-posts
+                                                 get-all-saved-posts
+                                                 set-app-state-field]]
+            [saved-for-reddit.views :refer [handle-error
+                                            error-html
+                                            main-html
+                                            post-html
+                                            loggedin-html
+                                            search-bar-html]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (enable-console-print!)
@@ -79,7 +88,8 @@
           (if (not (clojure.string/blank? (:token @app-state))) ;; reddit api token already exists in app-state
             (do
               (get-username (:token @app-state)))
-            (request-reddit-auth-token client-id redirect-uri code))))
+            (request-reddit-auth-token client-id redirect-uri code))
+          (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000))))
       (handle-error error))))
 
 ;; initialize the HTML page

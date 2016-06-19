@@ -17,15 +17,33 @@
   (swap! saved-for-reddit.core/app-state update-in [field] #(str value))
   value)
 
-(defn make-remote-get-call [endpoint]
-  (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
-        ;;enjoy your data
-        (js/console.log (:body response)))))
+#_(defn make-remote-get-call [endpoint]
+    (go (let [response (<! (http/get endpoint {:with-credentials? false}))]
+          ;;enjoy your data
+          (js/console.log (:body response)))))
 
-(defn make-remote-post-call [endpoint]
-  (go (let [response (<! (http/post endpoint {:with-credentials? false}))]
-        ;;enjoy your data
-        (js/console.log (:body response)))))
+#_(defn make-remote-post-call [endpoint]
+    (go (let [response (<! (http/post endpoint {:with-credentials? false}))]
+          ;;enjoy your data
+          (js/console.log (:body response)))))
+
+(defn refresh-reddit-auth-token [client-id redirect-uri]
+  ;; request reddit api token from code provided by reddit
+  (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
+                                    {:with-credentials? false
+                                     :basic-auth {:username client-id :password ""}
+                                     :form-params {:grant_type "refresh_token"
+                                                   :redirect_uri redirect-uri
+                                                   :refresh_token (:token @saved-for-reddit.core/app-state)}}))
+            status (:status response)
+            body   (:body response)
+            error  (:error body)
+            access-token (:access_token body)]
+        (if (clojure.string/blank? error)
+          (do
+            (set-app-state-field :token access-token)
+            (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000))
+          (handle-error error)))))
 
 (defn gen-reddit-auth-url [client-id redirect-uri state]
   (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
