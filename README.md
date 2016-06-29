@@ -9,6 +9,9 @@ A Single Page Application (SPA) written in Clojurescript to manage and search th
 ## TODO
 
 * verify state returned from redddit is correct.
+* better error processing
+    * try to refresh api token first if 401 is received
+* generate a map of all subreddits and count of saved posts in each
 * Setup Github project page
 
 ## License
