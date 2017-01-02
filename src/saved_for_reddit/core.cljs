@@ -63,12 +63,12 @@
                                      :form-params {:grant_type "authorization_code"
                                                    :redirect_uri redirect-uri
                                                    :code code}}))
-            {:keys [status body]} response
-            ;;status (:status response)
-            ;;body   (:body response)
-            {:keys [error access-token]} body
-            ;;error  (:error body)
-            ;;access-token (:access_token body)
+            ;;{:keys [status body]} response
+            status (:status response)
+            body   (:body response)
+            ;;{:keys [error access-token]} body
+            error  (:error body)
+            access-token (:access_token body)
             ]
         #_(println response) ;; will it block here till body is available?
         (if (clojure.string/blank? error)

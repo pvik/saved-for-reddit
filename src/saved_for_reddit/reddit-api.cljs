@@ -43,7 +43,7 @@
           (do
             (set-app-state-field :token access-token)
             (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000))
-          (handle-error error)))))
+          (views/handle-error error)))))
 
 (defn gen-reddit-auth-url [client-id redirect-uri state]
   (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")

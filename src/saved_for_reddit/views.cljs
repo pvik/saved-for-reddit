@@ -59,9 +59,14 @@
               :on-click (fn []
                           (swap! saved-for-reddit.core/get-posts? not))}
      [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]]
-   [:div {:class "list-group"}
-    (for [p @posts]
-      [post-html p])]
+   [:div {:class "row"}
+    [:div {:class "col-md-8"}
+     [:div {:class "list-group"}
+      (for [p @posts]
+        [post-html p])]]
+    [:div {:class "col-md-2"}
+     [:h4 "Subreddits"]
+     ]]
    [:div {:class "row"}
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
@@ -69,4 +74,4 @@
               :on-click (fn [] (println "get more posts") (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) posts (:after @state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
-             :value (:token @state) :readOnly "true"}]]])
+             :value (:token @state) :readOnly "true"}]]] )
