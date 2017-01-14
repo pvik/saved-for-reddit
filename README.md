@@ -13,6 +13,7 @@ A Single Page Application (SPA) written in Clojurescript to manage and search th
     * try to refresh api token first if 401 is received
 * generate a map of all subreddits and count of saved posts in each
 * filter based on subrreddits
+* search based on user
 * Setup Github project page
 
 ## License
