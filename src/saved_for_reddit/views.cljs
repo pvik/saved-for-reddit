@@ -60,7 +60,7 @@
                           (swap! saved-for-reddit.core/get-posts? not))}
      [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]]
    [:div {:class "row"}
-    [:div {:class "col-md-8"}
+    [:div {:class "col-md-10"}
      [:div {:class "list-group"}
       (for [p @posts]
         [post-html p])]]
