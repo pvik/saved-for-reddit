@@ -88,17 +88,23 @@
         error (:error query-vars)]
     (if (nil? error)
       ;; reddit auth request didnt give an error back
-      (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
-        (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef")) ;; redirect to reddit for requesting authorization
-        (do
-          (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
-          (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
-          (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app))
-          (if (not (clojure.string/blank? (:token @app-state))) ;; reddit api token already exists in app-state
-            (do
-              (get-username (:token @app-state)))
-            (request-reddit-auth-token client-id redirect-uri code))
-          (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000))))
+      (do
+        (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
+          ;; redirect to reddit for requesting authorization
+          (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef"))
+          ;; code query param is not nil or token is populated in app state
+          (do
+            (if (not (clojure.string/blank? (:token @app-state)))
+              ;; reddit api token already exists in app-state
+              (get-username (:token @app-state))
+              ;; app-state does not contain auth-token
+              ;; retreive auth-token from reddit api
+              (request-reddit-auth-token client-id redirect-uri code))
+            (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
+          )
+        (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
+        (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
+        (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app)))
       (handle-error error))))
 
 ;; initialize the HTML page
