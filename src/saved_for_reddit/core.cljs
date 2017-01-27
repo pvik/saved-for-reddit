@@ -50,9 +50,7 @@
         #_(println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (let [username (:name body)]
-            (set-app-state-field :username username)
-            (r/render-component [loggedin-html username] (dommy/sel1 :#loggedin))
-            (get-all-saved-posts token username saved-posts))
+            (set-app-state-field :username username))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
 (defn reddit-request-auth-token [client-id redirect-uri code]
@@ -92,7 +90,8 @@
           (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef"))
           ;; code query param is not nil or token is populated in app state
           (do
-            (if  (clojure.string/blank? (:token @app-state))
+            (println @app-state)
+            (if (clojure.string/blank? (:token @app-state))
               ;; app-state does not contain auth-token
               ;; retreive auth-token from reddit api
               (reddit-request-auth-token client-id redirect-uri code))
@@ -101,6 +100,9 @@
             (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
           )
         ;; all reddit auth and setup should be done
+        ;;  retreive all saved posts
+        (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts)
+        ;; render html doms
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
         (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
         (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app)))
