@@ -55,7 +55,7 @@
             (get-all-saved-posts token username saved-posts))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
 
-(defn request-reddit-auth-token [client-id redirect-uri code]
+(defn reddit-request-auth-token [client-id redirect-uri code]
   ;; request reddit api token from code provided by reddit
   (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
                                     {:with-credentials? false
@@ -72,9 +72,7 @@
             ]
         #_(println response) ;; will it block here till body is available?
         (if (clojure.string/blank? error)
-          (do
-            (set-app-state-field :token access-token)
-            )
+          (set-app-state-field :token access-token)
           (handle-error error)))))
 
 ;; Starting point
@@ -97,7 +95,7 @@
             (if  (clojure.string/blank? (:token @app-state))
               ;; app-state does not contain auth-token
               ;; retreive auth-token from reddit api
-              (request-reddit-auth-token client-id redirect-uri code))
+              (reddit-request-auth-token client-id redirect-uri code))
             ;; access-token should exist in app-state by this point
             (get-username (:token @app-state))
             (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
