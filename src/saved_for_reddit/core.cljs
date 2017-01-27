@@ -74,7 +74,7 @@
         (if (clojure.string/blank? error)
           (do
             (set-app-state-field :token access-token)
-            (get-username access-token))
+            )
           (handle-error error)))))
 
 ;; Starting point
@@ -94,14 +94,15 @@
           (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef"))
           ;; code query param is not nil or token is populated in app state
           (do
-            (if (not (clojure.string/blank? (:token @app-state)))
-              ;; reddit api token already exists in app-state
-              (get-username (:token @app-state))
+            (if  (clojure.string/blank? (:token @app-state))
               ;; app-state does not contain auth-token
               ;; retreive auth-token from reddit api
               (request-reddit-auth-token client-id redirect-uri code))
+            ;; access-token should exist in app-state by this point
+            (get-username (:token @app-state))
             (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
           )
+        ;; all reddit auth and setup should be done
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
         (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
         (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app)))
