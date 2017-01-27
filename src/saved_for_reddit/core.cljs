@@ -44,7 +44,7 @@
   (js/console.log "Acquiring username...")
   (go (let [response (<! (http/get "https://oauth.reddit.com/api/v1/me"
                                    {:with-credentials? false
-                                    :oauth-token (:token @app-state)}))
+                                    :oauth-token token}))
             body  (:body response)
             error (:error body)]
         #_(println response)
