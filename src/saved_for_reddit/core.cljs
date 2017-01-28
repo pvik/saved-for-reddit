@@ -97,7 +97,7 @@
         (if (and (nil? code) (clojure.string/blank? (:token @app-state)))
           ;; code query param is not present or the token is blank in HTML5 localStorage
           ;; redirect to reddit for requesting authorization
-          (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef"))
+          (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri))
           ;; code query param is not nil or token is populated in app state
           (do
             (println @app-state)
