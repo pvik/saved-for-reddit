@@ -11,7 +11,6 @@
             [dommy.core :as dommy]
             [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url
                                                  refresh-reddit-auth-token
-                                                 get-saved-posts
                                                  get-all-saved-posts
                                                  set-app-state-field]]
             [saved-for-reddit.views :refer [handle-error
@@ -118,9 +117,7 @@
                       (get-all-saved-posts (:token @app-state) username saved-posts))))
               ;; all reddit auth and setup is already in app-state
               ;;  retreive all saved posts
-              (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts))
-            (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
-          )
+              (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts))))
 
         ;; render html doms
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
