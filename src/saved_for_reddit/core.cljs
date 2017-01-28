@@ -29,7 +29,8 @@
 ;; save app data in local-storage so that it doesn't get over-written on page reload
 (def app-state (local-storage (r/atom {:username ""
                                        :token ""
-                                       :after nil})
+                                       :after nil
+                                       :state ""})
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
@@ -93,7 +94,8 @@
     (if (nil? error)
       ;; reddit auth request didnt give an error back
       (do
-        (if (and (nil? code) (clojure.string/blank? (:token @app-state))) ;; code query param is not present or the token is blank in HTML5 localStorage
+        (if (and (nil? code) (clojure.string/blank? (:token @app-state)))
+          ;; code query param is not present or the token is blank in HTML5 localStorage
           ;; redirect to reddit for requesting authorization
           (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri "abcdef"))
           ;; code query param is not nil or token is populated in app state
@@ -118,7 +120,6 @@
               ;; all reddit auth and setup is already in app-state
               ;;  retreive all saved posts
               (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts))))
-
         ;; render html doms
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
         (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
