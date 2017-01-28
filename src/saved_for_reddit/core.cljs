@@ -61,6 +61,7 @@
   ;; request reddit api token from code provided by reddit
   (js/console.log "in reddit-request-auth-token")
   (js/console.log "checking is state returned from reddit api is same as randomly generated in webapp")
+  (js/console.log (str "state in app-state is " (:state @app-state)))
   (if (not (= state (:state @app-state)))
     (handle-error "Invalid state returned from reddit."))
   (go
@@ -100,7 +101,9 @@
         (if (and (nil? code) (clojure.string/blank? (:token @app-state)))
           ;; code query param is not present or the token is blank in HTML5 localStorage
           ;; redirect to reddit for requesting authorization
-          (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri))
+          (let [state (clojure.string/replace (str (rand 50)) "." "")]
+            (set-app-state-field :state state)
+            (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri state)))
           ;; code query param is not nil or token is populated in app state
           (do
             (println @app-state)
