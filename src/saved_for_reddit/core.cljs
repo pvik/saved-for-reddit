@@ -1,7 +1,9 @@
 (ns saved-for-reddit.core
   (:require [reagent.core :as r :refer [atom]]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
+            [cljs.core.async :refer [<!
+                                     >!
+                                     chan]]
             [clojure.core.reducers :as reducers]
             [cemerick.url :as url]
             [clojure.walk :refer [keywordize-keys]]
@@ -39,39 +41,46 @@
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
   (set! (.-location js/window) "/"))
 
-(defn get-username [token]
+(defn reddit-get-username [token callback]
   ;; request username
-  (js/console.log "Acquiring username...")
+  (js/console.log "in get-username")
   (go (let [response (<! (http/get "https://oauth.reddit.com/api/v1/me"
                                    {:with-credentials? false
                                     :oauth-token token}))
             body  (:body response)
             error (:error body)]
-        #_(println response)
         (if (or (nil? error) (clojure.string/blank? error))
           (let [username (:name body)]
             (set-app-state-field :username username))
-          (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))))
+          (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))
+      (if (not (nil? callback))
+        (>! callback (:username @app-state)))
+      ))
 
-(defn reddit-request-auth-token [client-id redirect-uri code]
+(defn reddit-request-auth-token [client-id redirect-uri code callback]
   ;; request reddit api token from code provided by reddit
-  (go (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
-                                    {:with-credentials? false
-                                     :basic-auth {:username client-id :password ""}
-                                     :form-params {:grant_type "authorization_code"
-                                                   :redirect_uri redirect-uri
-                                                   :code code}}))
-            ;;{:keys [status body]} response
-            status (:status response)
-            body   (:body response)
-            ;;{:keys [error access-token]} body
-            error  (:error body)
-            access-token (:access_token body)
-            ]
-        #_(println response) ;; will it block here till body is available?
-        (if (clojure.string/blank? error)
-          (set-app-state-field :token access-token)
-          (handle-error error)))))
+  (js/console.log "in reddit-request-auth-token")
+  (go
+    (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
+                                  {:with-credentials? false
+                                   :basic-auth {:username client-id :password ""}
+                                   :form-params {:grant_type "authorization_code"
+                                                 :redirect_uri redirect-uri
+                                                 :code code}}))
+          ;;{:keys [status body]} response
+          status (:status response)
+          body   (:body response)
+          ;;{:keys [error access-token]} body
+          error  (:error body)
+          access-token (:access_token body)
+          ]
+      (println response) ;; will it block here till body is available?
+      (if (clojure.string/blank? error)
+        (set-app-state-field :token access-token)
+        (handle-error error)))
+    (if (not (nil? callback))
+      (>! callback (:token @app-state)))
+    ))
 
 ;; Starting point
 ;; making sure reddit api is initialized properly and proceed accordingly
@@ -94,14 +103,25 @@
             (if (clojure.string/blank? (:token @app-state))
               ;; app-state does not contain auth-token
               ;; retreive auth-token from reddit api
-              (reddit-request-auth-token client-id redirect-uri code))
-            ;; access-token should exist in app-state by this point
-            (get-username (:token @app-state))
+              (let [auth-token-callback-chan (chan)
+                    username-callback-chan (chan)]
+                (js/console.log "acquiring auth token")
+                (reddit-request-auth-token client-id redirect-uri code auth-token-callback-chan)
+                ;; start process that waits for auth-token; before obtaining username
+                (go (let [token (<! auth-token-callback-chan)]
+                      (js/console.log "received callback from request-auth-token")
+                      (js/console.log (str "reeceived token " token))
+                      (reddit-get-username token username-callback-chan)))
+                ;; starts process that waits for username; before retreiving all posts
+                (go (let [username (<! username-callback-chan)]
+                      (js/console.log "received callback from get-username")
+                      (get-all-saved-posts (:token @app-state) username saved-posts))))
+              ;; all reddit auth and setup is already in app-state
+              ;;  retreive all saved posts
+              (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts))
             (go (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000)))
           )
-        ;; all reddit auth and setup should be done
-        ;;  retreive all saved posts
-        (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts)
+
         ;; render html doms
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
         (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
