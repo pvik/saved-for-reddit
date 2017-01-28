@@ -57,9 +57,12 @@
         (>! callback (:username @app-state)))
       ))
 
-(defn reddit-request-auth-token [client-id redirect-uri code callback]
+(defn reddit-request-auth-token [client-id redirect-uri code state callback]
   ;; request reddit api token from code provided by reddit
   (js/console.log "in reddit-request-auth-token")
+  (js/console.log "checking is state returned from reddit api is same as randomly generated in webapp")
+  (if (not (= state (:state @app-state)))
+    (handle-error "Invalid state returned from reddit."))
   (go
     (let [response (<! (http/post "https://www.reddit.com/api/v1/access_token"
                                   {:with-credentials? false
@@ -107,7 +110,7 @@
               (let [auth-token-callback-chan (chan)
                     username-callback-chan (chan)]
                 (js/console.log "acquiring auth token")
-                (reddit-request-auth-token client-id redirect-uri code auth-token-callback-chan)
+                (reddit-request-auth-token client-id redirect-uri code state auth-token-callback-chan)
                 ;; start process that waits for auth-token; before obtaining username
                 (go (let [token (<! auth-token-callback-chan)]
                       (js/console.log "received callback from request-auth-token")
