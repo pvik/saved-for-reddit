@@ -14,7 +14,7 @@
 (defn post-html [p]
   (let [link? (:link p)
         key (:key p)
-        id (:id p)
+        name (:name p)
         title (:title p)
         url (:url p)
         body (:body p)
@@ -35,7 +35,7 @@
        [:button {:type "button" :class "btn btn-default"
                  :on-click (fn [] (.open js/window permalink))} "Comments"]
        [:button {:type "button" :class "btn btn-default"
-                 :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave id))} "Unsave"]]]]))
+                 :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]]))
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
