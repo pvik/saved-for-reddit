@@ -13,7 +13,7 @@
                  [reagent "0.6.0-rc"]
                  [cljs-http "0.1.41"]
                  [com.cemerick/url "0.1.1"]
-                 [alandipert/storage-atom "1.2.4"]
+                 [alandipert/storage-atom "2.0.1"]
                  [prismatic/dommy "1.1.0"]
                  [hickory "0.6.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]]

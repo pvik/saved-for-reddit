@@ -14,6 +14,7 @@
 (defn post-html [p]
   (let [link? (:link p)
         key (:key p)
+        id (:id p)
         title (:title p)
         url (:url p)
         body (:body p)
@@ -33,7 +34,8 @@
       [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
        [:button {:type "button" :class "btn btn-default"
                  :on-click (fn [] (.open js/window permalink))} "Comments"]
-       [:button {:type "button" :class "btn btn-default" :disabled true} "Unsave"]]]]))
+       [:button {:type "button" :class "btn btn-default"
+                 :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave id))} "Unsave"]]]]))
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
@@ -71,7 +73,9 @@
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"
               :id "btn-get-posts" :name "btn-get-posts"
-              :on-click (fn [] (println "get more posts") (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) posts (:after @state)) )}]]]
+              :on-click (fn []
+                          (println "get more posts")
+                          (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) posts (:after @state)) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @state) :readOnly "true"}]]] )

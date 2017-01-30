@@ -45,18 +45,22 @@
             (js/setTimeout #(refresh-reddit-auth-token client-id redirect-uri) 3300000))
           (views/handle-error error)))))
 
-(defn gen-reddit-auth-url [client-id redirect-uri state]
-  (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
-        query-param  {:client_id client-id
-                      :response_type "code"
-                      :state state
-                      :redirect_uri redirect-uri
-                      :duration "temporary"
-                      :scope "history,identity,save"}]
-    (str (assoc cem-url :query query-param))))
+(defn reddit-unsave [thing-id]
+  (let [response (<! (http/post "https://www.reddit.com/api/unsave"
+                                {:with-credentials? false
+                                 :oauth-token "token"
+                                 :id thing-id}))
+        status (:status response)
+        body   (:body response)
+        error  (:error body)]
+    (if (clojure.string/blank? error)
+      (do
+        (println body))
+      (views/handle-error error))))
 
 (defn repack-post [p]
-  (let [link? (nil? (:title p))
+  (let [id (:id p)
+        link? (nil? (:title p))
         key (str (:name p) (:subreddit_id p) (:link_id p))
         title (unescapeEntities (if link? (:link_title p) (:title p)))
         url (if link? (str (:link_url p) key) (:url p))

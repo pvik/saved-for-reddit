@@ -9,8 +9,7 @@
             [clojure.walk :refer [keywordize-keys]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [saved-for-reddit.reddit-api :refer [gen-reddit-auth-url
-                                                 refresh-reddit-auth-token
+            [saved-for-reddit.reddit-api :refer [refresh-reddit-auth-token
                                                  get-all-saved-posts
                                                  set-app-state-field]]
             [saved-for-reddit.views :refer [handle-error
@@ -27,10 +26,10 @@
 (def redirect-uri "http://127.0.0.1:3449/")
 
 ;; save app data in local-storage so that it doesn't get over-written on page reload
-(def app-state (local-storage (r/atom {:username ""
-                                       :token ""
-                                       :after nil
-                                       :state ""})
+(def app-state (local-storage (atom {:username ""
+                                     :token ""
+                                     :after nil
+                                     :state ""})
                               :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom []))
@@ -41,6 +40,17 @@
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
   (set! (.-location js/window) "/"))
 
+
+(defn reddit-auth-url [client-id redirect-uri state]
+  (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
+        query-param  {:client_id client-id
+                      :response_type "code"
+                      :state state
+                      :redirect_uri redirect-uri
+                      :duration "temporary"
+                      :scope "history,identity,save"}]
+    (str (assoc cem-url :query query-param))))
+
 (defn reddit-get-username [token callback]
   ;; request username
   (js/console.log "in get-username")
@@ -49,6 +59,7 @@
                                     :oauth-token token}))
             body  (:body response)
             error (:error body)]
+        (println body)
         (if (or (nil? error) (clojure.string/blank? error))
           (let [username (:name body)]
             (set-app-state-field :username username))
@@ -103,8 +114,8 @@
           ;; redirect to reddit for requesting authorization
           (let [gen-state (clojure.string/replace (str (rand 50)) "." "")]
             (set-app-state-field :state gen-state)
-            (js/console.log @app-state)
-            (set! (.-location js/window) (gen-reddit-auth-url client-id redirect-uri gen-state)))
+            (println @app-state)
+            (set! (.-location js/window) (reddit-auth-url client-id redirect-uri gen-state)))
           ;; code query param is not nil or token is populated in app state
           (do
             (println @app-state)
