@@ -73,6 +73,8 @@
         permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
+    ;; update the subreddit atom
+    (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)] #(inc ((keyword subreddit) @saved-for-reddit.core/subreddits)))
     {:id id :name name :link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
 
 (defn get-saved-posts [token username saved-posts & after]
