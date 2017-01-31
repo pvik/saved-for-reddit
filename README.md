@@ -4,7 +4,7 @@ A webapp  to manage and search through all your saved reddit posts
 
 ## Overview
 
-A Single Page Application (SPA) written in Clojurescript to manage and search through all your saved reddit posts
+A Single Page Application (SPA) written in Clojurescript to manage and search through all your saved reddit posts.
 
 ## TODO
 
@@ -12,7 +12,6 @@ A Single Page Application (SPA) written in Clojurescript to manage and search th
     * try to refresh api token first if 401 is received
 * generate a map of all subreddits and count of saved posts in each
 * filter based on subreddits
-* search based on user
 * Setup Github project page
 
 ## License
