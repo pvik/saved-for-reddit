@@ -1,7 +1,7 @@
 (ns saved-for-reddit.reddit-api
   (:require [reagent.core :as r]
             [cljs-http.client :as http]
-            [cljs.core.async :refer [<!]]
+            [cljs.core.async :refer [<! >! chan]]
             [cemerick.url :as url]
             [cljs-time.coerce :as timec]
             [cljs-time.format :as timef]
@@ -77,7 +77,7 @@
     (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)] #(inc ((keyword subreddit) @saved-for-reddit.core/subreddits)))
     {:id id :name name :link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
 
-(defn get-saved-posts [token username saved-posts & after]
+(defn get-saved-posts [token username saved-posts retreive-all? after callback]
   (let [saved-post-get-chan (if (nil? after)
                               (http/get (str "https://oauth.reddit.com/user/" username "/saved")
                                         {:with-credentials? false
@@ -85,21 +85,29 @@
                               (http/get (str "https://oauth.reddit.com/user/" username "/saved")
                                         {:with-credentials? false
                                          :oauth-token token
-                                         :query-params {"after" (first after)}}))]
+                                         :query-params {"after" after}}))]
     (js/console.log "Retreiving saved posts..." after)
     (go (let [response (<! saved-post-get-chan )
               posts (-> response :body :data :children)
               error (-> response :body :error)
               after-str (-> response :body :data :after)
               after-ret (if (clojure.string/blank? after-str) nil after-str)]
-          (println "received response")
+
           (if (clojure.string/blank? error)
             (do
-              (set-app-state-field :after after-ret)
-              (if (nil? after-ret)
-                (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true))
+              (println "received response .. after " after-ret)
+              ;; add the retreived posts to posts atom
               (doseq [p posts]
                 (swap! saved-posts #(conj % %2) (repack-post (:data p))))
+              (set-app-state-field :after after-ret)
+              (if (nil? after-ret)
+                ;; no more pages of saved posts
+                (if (not (nil? callback))
+                  (>! callback "-"))
+                ;; (set! (.-disabled (dommy/sel1 :#btn-get-posts)) true)
+                ;; more pages exists; should we retreive?
+                (if retreive-all?
+                  (get-saved-posts token username saved-posts true after-ret callback)))
               after-ret)
             (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired")))))))
 
@@ -110,31 +118,10 @@
   (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
   (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))
 
-(defn get-all-saved-posts [token username saved-posts & after]
-  (let [saved-post-get-chan (if (nil? after)
-                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
-                                        {:with-credentials? false
-                                         :oauth-token token})
-                              (http/get (str "https://oauth.reddit.com/user/" username "/saved")
-                                        {:with-credentials? false
-                                         :oauth-token token
-                                         :query-params {"after" (first after)}}))]
-    (js/console.log "Retreiving saved posts... from" after)
+(defn get-all-saved-posts [token username saved-posts]
+  (let [callback (chan)]
+    (get-saved-posts token username saved-posts true nil callback)
     (go
-      (if @saved-for-reddit.core/get-posts?
-        (let [response (<! saved-post-get-chan )
-              posts (-> response :body :data :children)
-              error (-> response :body :error)
-              after-str (-> response :body :data :after)
-              after-ret (if (clojure.string/blank? after-str) nil after-str)]
-          (println "received response..." after-ret)
-          (if (clojure.string/blank? error)
-            (do
-              #_(set-app-state-field :after after-ret)
-              (doseq [p posts]
-                (swap! saved-posts #(conj % %2) (repack-post (:data p))))
-              (if (not (nil? after-ret))
-                (get-all-saved-posts token username saved-posts after-ret)
-                (update-view-after-retreive-complete)))
-            (views/handle-error (str error " " (:error-text response) "\nYour API token might've expired"))))
+      (let [resp (<! callback)]
+        (println "received callback from get-saved-posts")
         (update-view-after-retreive-complete)))))
