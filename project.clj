@@ -10,15 +10,15 @@
                  [org.clojure/clojurescript "1.9.293"]
                  [org.clojure/core.async "0.2.395"
                   :exclusions [org.clojure/tools.reader]]
-                 [reagent "0.6.0-rc"]
-                 [cljs-http "0.1.41"]
+                 [reagent "0.6.0"]
+                 [cljs-http "0.1.42"]
                  [com.cemerick/url "0.1.1"]
                  [alandipert/storage-atom "2.0.1"]
                  [prismatic/dommy "1.1.0"]
-                 [hickory "0.6.0"]
+                 [hickory "0.7.0"]
                  [com.andrewmcveigh/cljs-time "0.4.0"]]
 
-  :plugins [[lein-figwheel "0.5.4-2"]
+  :plugins [[lein-figwheel "0.5.9"]
             [lein-cljsbuild "1.1.3" :exclusions [[org.clojure/clojure]]]]
 
   :source-paths ["src"]
@@ -95,7 +95,7 @@
   ;; https://github.com/bhauman/lein-figwheel/wiki/Using-the-Figwheel-REPL-within-NRepl
 
 
-  :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.4-2"]
+  :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.9"]
                                   [com.cemerick/piggieback "0.2.1"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
