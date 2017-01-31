@@ -46,20 +46,23 @@
           (views/handle-error error)))))
 
 (defn reddit-unsave [thing-id]
-  (let [response (<! (http/post "https://www.reddit.com/api/unsave"
-                                {:with-credentials? false
-                                 :oauth-token "token"
-                                 :id thing-id}))
-        status (:status response)
-        body   (:body response)
-        error  (:error body)]
-    (if (clojure.string/blank? error)
-      (do
-        (println body))
-      (views/handle-error error))))
+  (println (str "using token " (:token @saved-for-reddit.core/app-state)))
+  (go
+    (let [response (<! (http/post "https://oauth.reddit.com/api/unsave"
+                                  {:with-credentials? false
+                                   :oauth-token (:token @saved-for-reddit.core/app-state)
+                                   :form-params {:id thing-id}}))
+          status (:status response)
+          body   (:body response)
+          error  (:error body)]
+      (if (clojure.string/blank? error)
+        (do
+          (println body))
+        (views/handle-error error)))))
 
 (defn repack-post [p]
   (let [id (:id p)
+        name (:name p)
         link? (nil? (:title p))
         key (str (:name p) (:subreddit_id p) (:link_id p))
         title (unescapeEntities (if link? (:link_title p) (:title p)))
@@ -70,7 +73,7 @@
         permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
-    {:link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
+    {:id id :name name :link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
 
 (defn get-saved-posts [token username saved-posts & after]
   (let [saved-post-get-chan (if (nil? after)
