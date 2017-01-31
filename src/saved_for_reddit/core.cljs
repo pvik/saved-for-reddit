@@ -65,8 +65,7 @@
             (set-app-state-field :username username))
           (handle-error (str error " " (:error-text response) "\nYour API token might've expired."))))
       (if (not (nil? callback))
-        (>! callback (:username @app-state)))
-      ))
+        (>! callback (:username @app-state)))))
 
 (defn reddit-request-auth-token [client-id redirect-uri code state callback]
   ;; request reddit api token from code provided by reddit
@@ -87,8 +86,7 @@
           body   (:body response)
           ;;{:keys [error access-token]} body
           error  (:error body)
-          access-token (:access_token body)
-          ]
+          access-token (:access_token body)]
       (println response) ;; will it block here till body is available?
       (if (clojure.string/blank? error)
         (set-app-state-field :token access-token)
