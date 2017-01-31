@@ -37,6 +37,13 @@
        [:button {:type "button" :class "btn btn-default"
                  :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]]))
 
+(defn subreddit-html [subreddits]
+  [:ul {:class "list-group"}
+   (doall
+    (for [s (vec (keys @subreddits))]
+      ^{:key s}
+      [:li {:class "list-group-item"} s [:span {:class "badge"} (s @subreddits)]]))])
+
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
 
@@ -51,7 +58,7 @@
     [:span {:class "glyphicon glyphicon-refresh" :aria-hidden "true"}]  ]
    ])
 
-(defn main-html [state posts]
+(defn main-html [state posts subreddits]
   [:div {:class "col-md-10"}
    [:h4
     [:img {:id "loading-gif" :src "img/loading.gif"}]
@@ -62,13 +69,13 @@
                           (swap! saved-for-reddit.core/get-posts? not))}
      [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]]
    [:div {:class "row"}
-    [:div {:class "col-md-10"}
+    [:div {:class "col-md-9"}
      [:div {:class "list-group"}
       (for [p @posts]
         [post-html p])]]
-    [:div {:class "col-md-2"}
+    [:div {:class "col-md-3"}
      [:h4 "Subreddits"]
-     ]]
+     [subreddit-html subreddits]]]
    [:div {:class "row"}
     [:div {:class "col-md-12"}
      [:input {:type "button" :value "moar!"

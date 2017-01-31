@@ -137,9 +137,10 @@
               ;;  retreive all saved posts
               (get-all-saved-posts (:token @app-state) (:username @app-state) saved-posts))))
         ;; render html doms
+        (println subreddits)
         (r/render-component [loggedin-html (:username @app-state)] (dommy/sel1 :#loggedin))
         (r/render-component [search-bar-html] (dommy/sel1 :#search-form))
-        (r/render-component [main-html app-state saved-posts] (dommy/sel1 :#app)))
+        (r/render-component [main-html app-state saved-posts subreddits] (dommy/sel1 :#app)))
       (handle-error error))))
 
 ;; initialize the HTML page
