@@ -71,11 +71,17 @@
         subreddit (:subreddit p)
         author (:author p)
         permalink (if link? (:link_url p) (str "https://www.reddit.com" (:permalink p)))
+        nsfw? (:over_18 p)
+        thumbnail (:thumbnail p)
+        num_comments (:num_comments p)
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
     ;; update the subreddit atom
     (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)] #(inc ((keyword subreddit) @saved-for-reddit.core/subreddits)))
-    {:id id :name name :link link? :key key :title title :url url :body body :subreddit subreddit :author author :permalink permalink :created-on created-on-str}))
+    {:id id :name name :link link? :key key :title title
+     :url url :body body :subreddit subreddit :author author
+     :nsfw? nsfw? :thumbnail thumbnail :num_comments num_comments
+     :permalink permalink :created-on created-on-str}))
 
 (defn get-saved-posts [token username saved-posts retreive-all? after callback]
   (let [saved-post-get-chan (if (nil? after)
@@ -92,13 +98,13 @@
               error (-> response :body :error)
               after-str (-> response :body :data :after)
               after-ret (if (clojure.string/blank? after-str) nil after-str)]
-
           (if (clojure.string/blank? error)
             (do
               (println "received response .. after " after-ret)
               ;; add the retreived posts to posts atom
               (doseq [p posts]
-                (swap! saved-posts #(conj % %2) (repack-post (:data p))))
+                (let [repacked-post  (repack-post (:data p))]
+                  (swap! saved-posts update-in [(keyword (:name repacked-post))] (fn [arg1] repacked-post))))
               (set-app-state-field :after after-ret)
               (if (nil? after-ret)
                 ;; no more pages of saved posts

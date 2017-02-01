@@ -21,19 +21,24 @@
         subreddit (:subreddit p)
         author (:author p)
         permalink (:permalink p)
-        created-on-str (:created-on p)]
+        created-on-str (:created-on p)
+        nsfw? (:nsfw? p)
+        thumbnail (:thumbnail p)
+        num_comments (:num_comments p)]
     [:div {:class "panel panel-default"}
      [:div {:class "panel-heading"}
       [:h4 {:class "panel-title"}
        [:a {:href url} title] " "
-       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "label label-default"} subreddit]]]
+       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "label label-default"} subreddit]]
+       (if nsfw?
+         [:span {:class "label label-danger"} "NSFW"])]
       [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
        " on " created-on-str]]
      [:div {:class "panel-body"}
       [:div {:dangerouslySetInnerHTML {:__html body}}]
       [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
        [:button {:type "button" :class "btn btn-default"
-                 :on-click (fn [] (.open js/window permalink))} "Comments"]
+                 :on-click (fn [] (.open js/window permalink))} (str "Comments (" num_comments ")")]
        [:button {:type "button" :class "btn btn-default"
                  :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]]))
 
@@ -42,7 +47,7 @@
    (doall
     (for [s (vec (keys @subreddits))]
       ^{:key s}
-      [:li {:class "list-group-item"} s [:span {:class "badge"} (s @subreddits)]]))])
+      [:li {:class "list-group-item"} s [:span {:class "badge"} (s @subreddits)]])) ])
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
@@ -71,8 +76,10 @@
    [:div {:class "row"}
     [:div {:class "col-md-9"}
      [:div {:class "list-group"}
-      (for [p @posts]
-        [post-html p])]]
+      (doall
+       (for [post-name (vec (keys @posts))]
+         ^{:key post-name}
+         [post-html (post-name @posts)] )) ]]
     [:div {:class "col-md-3"}
      [:h4 "Subreddits"]
      [subreddit-html subreddits]]]

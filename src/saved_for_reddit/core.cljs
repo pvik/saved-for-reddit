@@ -36,7 +36,7 @@
                                      :state ""})
                               :saved-for-reddit-app-state))
 
-(def saved-posts (r/atom []))
+(def saved-posts (r/atom {}))
 (def subreddits (r/atom {}))
 (def get-posts? (r/atom true))
 
