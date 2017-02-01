@@ -11,6 +11,7 @@ A Single Page Application (SPA) written in Clojurescript to manage and search th
 * better error processing
     * try to refresh api token first if 401 is received
 * filter based on subreddits
+* fix search bar to filter out posts
 * setup github project page
 
 ## License
