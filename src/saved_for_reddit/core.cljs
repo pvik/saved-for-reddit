@@ -9,9 +9,9 @@
             [clojure.walk :refer [keywordize-keys]]
             [alandipert.storage-atom :refer [local-storage]]
             [dommy.core :as dommy]
-            [saved-for-reddit.reddit-api :refer [refresh-reddit-auth-token
-                                                 get-all-saved-posts
-                                                 set-app-state-field]]
+            [saved-for-reddit.redditapi :refer [refresh-reddit-auth-token
+                                                get-all-saved-posts
+                                                set-app-state-field]]
             [saved-for-reddit.views :refer [handle-error
                                             error-html
                                             main-html

@@ -49,7 +49,7 @@
          [:button {:type "button" :class "btn btn-default"
                    :on-click (fn [] (.open js/window permalink))} "Comments " [:span {:class "badge"} num_comments]]
          [:button {:type "button" :class "btn btn-default"
-                   :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]])))
+                   :on-click (fn [] (saved-for-reddit.redditapi/reddit-unsave name))} "Unsave"]]]])))
 
 (defn subreddit-html [subreddits]
   [:ul {:class "list-group"}
@@ -98,7 +98,7 @@
               :id "btn-get-posts" :name "btn-get-posts"
               :on-click (fn []
                           (println "get more posts")
-                          (saved-for-reddit.reddit-api/get-saved-posts (:token @state) (:username @state) posts false (:after @state) nil) )}]]]
+                          (saved-for-reddit.redditapi/get-saved-posts (:token @state) (:username @state) posts false (:after @state) nil) )}]]]
    [:p "Reddit API Token: "
     [:input {:type "text" :id "token" :name "token"
              :value (:token @state) :readOnly "true"}]]] )
