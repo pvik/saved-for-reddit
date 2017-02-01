@@ -62,6 +62,7 @@
 
 (defn repack-post [p]
   (let [id (:id p)
+        visible? true
         name (:name p)
         link? (nil? (:title p))
         key (str (:name p) (:subreddit_id p) (:link_id p))
@@ -78,7 +79,7 @@
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
     ;; update the subreddit atom
     (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)] #(inc ((keyword subreddit) @saved-for-reddit.core/subreddits)))
-    {:id id :name name :link link? :key key :title title
+    {:id id :visible? visible? :name name :link link? :key key :title title
      :url url :body body :subreddit subreddit :author author
      :nsfw? nsfw? :thumbnail thumbnail :num_comments num_comments
      :permalink permalink :created-on created-on-str}))

@@ -13,6 +13,7 @@
 
 (defn post-html [p]
   (let [link? (:link p)
+        visible? (:visible? p)
         key (:key p)
         name (:name p)
         title (:title p)
@@ -25,22 +26,30 @@
         nsfw? (:nsfw? p)
         thumbnail (:thumbnail p)
         num_comments (:num_comments p)]
-    [:div {:class "panel panel-default"}
-     [:div {:class "panel-heading"}
-      [:h4 {:class "panel-title"}
-       [:a {:href url} title] " "
-       [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "label label-default"} subreddit]]
-       (if nsfw?
-         [:span {:class "label label-danger"} "NSFW"])]
-      [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
-       " on " created-on-str]]
-     [:div {:class "panel-body"}
-      [:div {:dangerouslySetInnerHTML {:__html body}}]
-      [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
-       [:button {:type "button" :class "btn btn-default"
-                 :on-click (fn [] (.open js/window permalink))} (str "Comments (" num_comments ")")]
-       [:button {:type "button" :class "btn btn-default"
-                 :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]]))
+    (if visible?
+      [:div {:class "panel panel-default"}
+       [:div {:class "media"}
+        (if (not (= thumbnail "self"))
+          [:div {:class "media-left"}
+           [:img {:class "media-object" :src thumbnail}]])
+        [:div {:class "media-body"}
+         [:h4 {:class "media-heading"}
+          [:a {:href url} title] " "]
+         [:a {:href (str "https://www.reddit.com/r/" subreddit)} [:span {:class "label label-default"} subreddit]]
+         (if nsfw?
+           [:span {:class "label label-danger"} "NSFW"])
+         [:br]
+         [:small "submitted by " [:a {:href (str "https://www.reddit.com/user/" author)} [:small author]]
+          " on " created-on-str]
+         [:br]
+         [:div {:dangerouslySetInnerHTML {:__html body}}]
+         ]]
+       [:div {:class "panel-heading"}
+        [:div {:class "btn-group btn-group-xs" :role= "group" :aria-label key}
+         [:button {:type "button" :class "btn btn-default"
+                   :on-click (fn [] (.open js/window permalink))} "Comments " [:span {:class "badge"} num_comments]]
+         [:button {:type "button" :class "btn btn-default"
+                   :on-click (fn [] (saved-for-reddit.reddit-api/reddit-unsave name))} "Unsave"]]]])))
 
 (defn subreddit-html [subreddits]
   [:ul {:class "list-group"}
