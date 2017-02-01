@@ -57,7 +57,13 @@
           error  (:error body)]
       (if (clojure.string/blank? error)
         (do
-          (println body))
+          (println body)
+          ;; set the post visibility to false
+          (swap! saved-for-reddit.core/saved-posts
+                 update-in
+                 [(keyword thing-id)]
+                 #(assoc % :visible? false))
+          )
         (views/handle-error error)))))
 
 (defn repack-post [p]
