@@ -30,8 +30,11 @@
       [:div {:class "panel panel-default"}
        [:div {:class "media"}
         (if (not (= thumbnail "self"))
-          [:div {:class "media-left"}
-           [:img {:class "media-object" :src thumbnail}]])
+          (if (= thumbnail "nsfw")
+            [:div {:class "media-left"}
+             [:img {:class "media-object" :height "70em" :src "img/nsfw.png"}]]
+            [:div {:class "media-left"}
+             [:img {:class "media-object" :height "80em" :src thumbnail}]]))
         [:div {:class "media-body"}
          [:h4 {:class "media-heading"}
           [:a {:href url} title] " "]
