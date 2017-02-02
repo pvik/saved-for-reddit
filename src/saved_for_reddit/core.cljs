@@ -50,7 +50,7 @@
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
   (set! (.-location js/window) "/"))
 
-
+;; generate the URL for Reddit API OAuth
 (defn reddit-auth-url [client-id redirect-uri state]
   (let [cem-url (url/url "https://www.reddit.com/api/v1/authorize")
         query-param  {:client_id client-id
@@ -102,8 +102,7 @@
         (set-app-state-field :token access-token)
         (handle-error error)))
     (if (not (nil? callback))
-      (>! callback (:token @app-state)))
-    ))
+      (>! callback (:token @app-state)))))
 
 ;; Starting point
 ;; making sure reddit api is initialized properly and proceed accordingly
