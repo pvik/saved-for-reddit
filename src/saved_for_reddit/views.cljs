@@ -55,11 +55,20 @@
                    :on-click (fn [] (saved-for-reddit.redditapi/reddit-unsave name))} "Unsave"]]]])))
 
 (defn subreddit-html [subreddits]
-  [:ul {:class "list-group"}
+  [:div {:class "list-group"}
    (doall
     (for [s (vec (keys @subreddits))]
-      ^{:key s}
-      [:li {:class "list-group-item"} s [:span {:class "badge"} (:count (s @subreddits))]])) ])
+      (if (:filtered? (s @subreddits))
+        ^{:key s}
+        [:button {:type "button "
+                  :on-click (fn [] (.log js/console "clicked on " s)
+                              (saved-for-reddit.redditapi/unfilter-subreddit s subreddits))
+                  :class "list-group-item list-group-item-info"} s [:span {:class "badge"} (:count (s @subreddits))]]
+        ^{:key s}
+        [:button {:type "button "
+                  :on-click (fn [] (.log js/console "clicked on " s)
+                              (saved-for-reddit.redditapi/filter-subreddit s subreddits))
+                  :class "list-group-item"} s [:span {:class "badge"} (:count (s @subreddits))]])))])
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])

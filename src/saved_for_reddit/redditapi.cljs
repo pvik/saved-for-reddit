@@ -139,3 +139,11 @@
       (let [resp (<! callback)]
         (println "received callback from get-saved-posts")
         (update-view-after-retreive-complete)))))
+
+(defn filter-subreddit [s subreddits]
+  (swap! subreddits update-in [s]
+         (fn [sr-map] (assoc sr-map :filtered? true))) )
+
+(defn unfilter-subreddit [s subreddits]
+  (swap! subreddits update-in [s]
+         (fn [sr-map] (assoc sr-map :filtered? false)))  )
