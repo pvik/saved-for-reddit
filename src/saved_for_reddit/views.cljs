@@ -56,6 +56,9 @@
 
 (defn subreddit-html [subreddits]
   [:div {:class "list-group"}
+   ^{:key "clear-subreddit-filter"}
+   [:button {:type "button"
+             :class "list-group-item"} "Clear Subreddit Filtering"]
    (doall
     (for [s (vec (keys @subreddits))]
       (if (:filtered? (s @subreddits))
