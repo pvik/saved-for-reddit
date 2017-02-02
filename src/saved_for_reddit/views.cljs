@@ -62,12 +62,12 @@
         ^{:key s}
         [:button {:type "button "
                   :on-click (fn [] (.log js/console "clicked on " s)
-                              (saved-for-reddit.redditapi/unfilter-subreddit s subreddits))
+                              (saved-for-reddit.redditapi/unfilter-subreddit s))
                   :class "list-group-item list-group-item-info"} s [:span {:class "badge"} (:count (s @subreddits))]]
         ^{:key s}
         [:button {:type "button "
                   :on-click (fn [] (.log js/console "clicked on " s)
-                              (saved-for-reddit.redditapi/filter-subreddit s subreddits))
+                              (saved-for-reddit.redditapi/filter-subreddit s))
                   :class "list-group-item"} s [:span {:class "badge"} (:count (s @subreddits))]])))])
 
 (defn loggedin-html [user-name]
@@ -99,8 +99,9 @@
      [:div {:class "list-group"}
       (doall
        (for [post-name (vec (keys @posts))]
-         ^{:key post-name}
-         [post-html (post-name @posts)] )) ]]
+         (if (:visible? (post-name @posts))
+           ^{:key post-name}
+           [post-html (post-name @posts)])))]]
     [:div {:class "col-md-3"}
      [:h4 "Subreddits"]
      [subreddit-html subreddits]]]
