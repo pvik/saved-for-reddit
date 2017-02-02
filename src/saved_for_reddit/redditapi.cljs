@@ -140,30 +140,45 @@
         (println "received callback from get-saved-posts")
         (update-view-after-retreive-complete)))))
 
-(defn update-posts-visibility-by-subreddit-filter []
+(defn update-all-posts-visibility-true []
   (let [posts saved-for-reddit.core/saved-posts
         subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "updating posts visiblity by subreddit filter")
     (doseq [post-name-keyword (vec (keys @posts))]
       (println post-name-keyword)
+      (let [post (post-name-keyword @posts)]
+        (swap! posts update-in [post-name-keyword]
+               (fn [p-map] (assoc p-map :visible? true)))))))
+
+
+(defn update-all-posts-visibility-by-subreddit-filter []
+  (let [posts saved-for-reddit.core/saved-posts
+        subreddits saved-for-reddit.core/subreddits]
+    (saved-for-reddit.core/console-log "updating posts visiblity by subreddit filter")
+    (doseq [post-name-keyword (vec (keys @posts))]
       (let [post (post-name-keyword @posts)
             subreddit-filtered? (:filtered? ((keyword (:subreddit post)) @subreddits)) ]
-        (println "post: " post)
         (swap! posts update-in [post-name-keyword]
-               (fn [p-map] (assoc p-map :visible? subreddit-filtered?)))))
-    (println "posts: " @posts))
-  )
+               (fn [p-map] (assoc p-map :visible? subreddit-filtered?)))))))
 
 (defn filter-subreddit [s]
   (let [subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "filtering " s)
     (swap! subreddits update-in [s]
-           (fn [sr-map] (assoc sr-map :filtered? true)))
-    (update-posts-visibility-by-subreddit-filter)))
+           (fn [sr-map] (assoc sr-map :filtered? true))))
+  (update-all-posts-visibility-by-subreddit-filter))
 
 (defn unfilter-subreddit [s]
   (let [subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "unfiltering " s)
     (swap! subreddits update-in [s]
-           (fn [sr-map] (assoc sr-map :filtered? false)))
-    (update-posts-visibility-by-subreddit-filter)))
+           (fn [sr-map] (assoc sr-map :filtered? false))))
+  (update-all-posts-visibility-by-subreddit-filter))
+
+(defn clear-subreddit-filter []
+  (let [subreddits saved-for-reddit.core/subreddits]
+    (saved-for-reddit.core/console-log "updating posts visiblity by subreddit filter")
+    (doseq [s (vec (keys @subreddits))]
+      (swap! subreddits update-in [s]
+             (fn [sr-map] (assoc sr-map :filtered? false)))))
+  (update-all-posts-visibility-true))
