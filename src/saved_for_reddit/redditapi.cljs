@@ -84,7 +84,8 @@
         created-on-epoch-local (+ (:created_utc p) (* 3600 (.getTimezoneOffset (js/Date.))))
         created-on-str (timef/unparse time-formatter (timec/from-long (* 1000 created-on-epoch-local)))]
     ;; update the subreddit atom
-    (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)] #(inc ((keyword subreddit) @saved-for-reddit.core/subreddits)))
+    (swap! saved-for-reddit.core/subreddits update-in [(keyword subreddit)]
+           (fn [sr-map] (assoc (assoc sr-map :count (inc (:count sr-map))) :filtered? false)))
     {:id id :visible? visible? :name name :link link? :key key :title title
      :url url :body body :subreddit subreddit :author author
      :nsfw? nsfw? :thumbnail thumbnail :num_comments num_comments

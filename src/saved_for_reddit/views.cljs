@@ -59,7 +59,7 @@
    (doall
     (for [s (vec (keys @subreddits))]
       ^{:key s}
-      [:li {:class "list-group-item"} s [:span {:class "badge"} (s @subreddits)]])) ])
+      [:li {:class "list-group-item"} s [:span {:class "badge"} (:count (s @subreddits))]])) ])
 
 (defn loggedin-html [user-name]
   [:p {:class "navbar-text navbar-right"} "Logged in as " user-name])
