@@ -29,7 +29,7 @@
 ;; setting reddit-api properties for dev or prod
 (if (= "pvik.github.io" (get (clojure.string/split (str (.-location js/window)) #"/") 2))
   (do
-    (defonce client-id "f6SI7mRAmhSABg")
+    (defonce client-id "yeFMw-zslyBvPQ")
     (defonce redirect-uri "https://pvik.github.io/saved-for-reddit/"))
   (do
     (defonce client-id "ZZ370hqcmUVsRQ")
