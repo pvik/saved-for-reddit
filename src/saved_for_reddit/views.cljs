@@ -56,11 +56,12 @@
 
 (defn subreddit-html [subreddits]
   [:div {:class "list-group"}
-   ^{:key "clear-subreddit-filter"}
-   [:button {:type "button"
-             :on-click (fn [] (.log js/console "clicked on clear subreddit filter")
-                         (saved-for-reddit.redditapi/clear-subreddit-filter))
-             :class "list-group-item"} "Clear Subreddit Filtering"]
+   (if @saved-for-reddit.core/display-subreddit-filter-btn?
+     ^{:key (keyword "clear-subreddit-filter")}
+     [:button {:type "button"
+               :on-click (fn [] (.log js/console "clicked on clear subreddit filter")
+                           (saved-for-reddit.redditapi/clear-subreddit-filter))
+               :class "list-group-item list-group-item-warning"} "Clear Subreddit Filtering"])
    (doall
     (for [s (vec (keys @subreddits))]
       (if (:filtered? (s @subreddits))

@@ -145,7 +145,6 @@
         subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "updating posts visiblity by subreddit filter")
     (doseq [post-name-keyword (vec (keys @posts))]
-      (println post-name-keyword)
       (let [post (post-name-keyword @posts)]
         (swap! posts update-in [post-name-keyword]
                (fn [p-map] (assoc p-map :visible? true)))))))
@@ -166,6 +165,7 @@
     (saved-for-reddit.core/console-log "filtering " s)
     (swap! subreddits update-in [s]
            (fn [sr-map] (assoc sr-map :filtered? true))))
+  (reset! saved-for-reddit.core/display-subreddit-filter-btn? true)
   (update-all-posts-visibility-by-subreddit-filter))
 
 (defn unfilter-subreddit [s]
@@ -181,4 +181,5 @@
     (doseq [s (vec (keys @subreddits))]
       (swap! subreddits update-in [s]
              (fn [sr-map] (assoc sr-map :filtered? false)))))
+  (reset! saved-for-reddit.core/display-subreddit-filter-btn? false)
   (update-all-posts-visibility-true))

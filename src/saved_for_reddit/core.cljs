@@ -62,7 +62,7 @@
 (def saved-posts (r/atom {}))
 (def subreddits (r/atom {}))
 (def get-posts? (r/atom true))
-
+(def display-subreddit-filter-btn? (r/atom false))
 
 (defn clear-and-refresh-app []
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
