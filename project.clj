@@ -1,6 +1,6 @@
-(defproject saved-for-reddit "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
-  :url "http://example.com/FIXME"
+(defproject saved-for-reddit "0.2.1"
+  :description "An app to manage and search through all your saved reddit posts"
+  :url "https://pvik.github.io/saved-for-reddit/"
   :license {:name "MIT License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
