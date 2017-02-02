@@ -22,12 +22,18 @@
 
 (enable-console-print!)
 
-(def client-id "ZZ370hqcmUVsRQ")
-;; redirect-uri has to be hardcoded, reddit api requires this to be exactly as specified in the app details
-(def redirect-uri "http://127.0.0.1:3449/")
+;; setting reddit-api properties for dev or prod
+(if (= "pvik.github.io" (get (clojure.string/split (str (.-location js/window)) #"/") 2))
+  (do
+    (defonce client-id "f6SI7mRAmhSABg")
+    (defonce redirect-uri "https://pvik.github.io/saved-for-reddit/"))
+  (do
+    (defonce client-id "ZZ370hqcmUVsRQ")
+    (defonce redirect-uri "http://127.0.0.1:3449/")))
+;; redirect-uri has to be hardcoded,
+;; reddit api requires this to be exactly as specified in the app details
 ;; retreive the redirect uri from browser location
 ;;(def redirect-uri (str "http://" (get (clojure.string/split (str (.-location js/window)) #"/") 2) "/"))
-
 
 ;; save app data in local-storage so that it doesn't get over-written on page reload
 (def app-state (local-storage (atom {:username ""
