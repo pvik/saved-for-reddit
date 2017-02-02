@@ -141,7 +141,8 @@
         (update-view-after-retreive-complete)))))
 
 (defn update-posts-visibility-by-subreddit-filter []
-  (let [posts saved-for-reddit.core/saved-posts]
+  (let [posts saved-for-reddit.core/saved-posts
+        subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "updating posts visiblity by subreddit filter")
     (doseq [post-name-keyword (vec (keys @posts))]
       (println post-name-keyword)
@@ -154,16 +155,14 @@
   )
 
 (defn filter-subreddit [s]
-  (let [subreddits saved-for-reddit.core/subreddits
-        posts saved-for-reddit.core/saved-posts]
+  (let [subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "filtering " s)
     (swap! subreddits update-in [s]
            (fn [sr-map] (assoc sr-map :filtered? true)))
     (update-posts-visibility-by-subreddit-filter)))
 
 (defn unfilter-subreddit [s]
-  (let [subreddits saved-for-reddit.core/subreddits
-        posts saved-for-reddit.core/saved-posts]
+  (let [subreddits saved-for-reddit.core/subreddits]
     (saved-for-reddit.core/console-log "unfiltering " s)
     (swap! subreddits update-in [s]
            (fn [sr-map] (assoc sr-map :filtered? false)))
