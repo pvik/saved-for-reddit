@@ -35,12 +35,25 @@
 ;; retreive the redirect uri from browser location
 ;;(def redirect-uri (str "http://" (get (clojure.string/split (str (.-location js/window)) #"/") 2) "/"))
 
+;; check if :saved-for-reddit-app-state already exists in localStorage
+(def app-state-exists? (atom false))
+(let [localstr (.-localStorage js/window)]
+  (for [c (range js/localStorage.length)]
+    (if (= "saved-for-reddit-app-state"
+           (re-find #"saved-for-reddit-app-state" (.key js/localStorage c)))
+      (do
+        (println c)
+        (reset! app-state-exists? true)))))
+
+(if (not app-state-exists?)
+  (println "app-state-does not exists"))
+
 ;; save app data in local-storage so that it doesn't get over-written on page reload
-(def app-state (local-storage (atom {:username ""
-                                     :token ""
-                                     :after nil
-                                     :state ""})
-                              :saved-for-reddit-app-state))
+(defonce app-state (local-storage (r/atom {:username ""
+                                           :token ""
+                                           :after nil
+                                           :state ""})
+                                  :saved-for-reddit-app-state))
 
 (def saved-posts (r/atom {}))
 (def subreddits (r/atom {}))
