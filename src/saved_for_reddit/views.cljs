@@ -29,7 +29,7 @@
     (if visible?
       [:div {:class "panel panel-default"}
        [:div {:class "media"}
-        (if (not (= thumbnail "self"))
+        (if (not (or (= thumbnail "self") (= thumbnail "image") (= thumbnail "default")))
           (if (= thumbnail "nsfw")
             [:div {:class "media-left"}
              [:img {:class "media-object" :height "70em" :src "img/nsfw.png"}]]
