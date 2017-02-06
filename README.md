@@ -1,6 +1,6 @@
 # saved-for-reddit
 
-A webapp to manage and search through all your saved reddit posts
+A webapp to manage and search through all your saved reddit posts. You can check out the app [here](https://pvik.github.io/saved-for-reddit/).
 
 ## Overview
 
