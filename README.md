@@ -23,7 +23,7 @@ This is a javascript application that runs completely in the users browser, no u
 
 ## TODO
 
-* fix search bar to filter out posts. Currently the browsers find should to be used to search for keyywords amongst your saved posts.
+* fix search bar to filter out posts. Currently the browsers find should to be used to search for keywords amongst your saved posts.
 * better error processing
     * try to refresh api token first if 401 is received
 * clear out subreddit filter, when the last subreddit filter is unselected
