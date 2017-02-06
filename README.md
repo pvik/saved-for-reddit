@@ -18,13 +18,16 @@ This is a javascript application that runs completely in the users browser, no u
 * Post thumbnails are displayed (if they are provided by the Reddit API)
 * NSFW posts will be marked accordingly
 * If your reddit preference is set to not display NSFW thumnails, then a placeholder NSFW thumnail will be displayed
+* Link to comments to saved posts
+* Comment count on posts is diplayed
 
 ## TODO
 
 * fix search bar to filter out posts. Currently the browsers find should to be used to search for keyywords amongst your saved posts.
 * better error processing
     * try to refresh api token first if 401 is received
-* thumbnail image requests are not done over SSL.
+* clear out subreddit filter, when the last subreddit filter is unselected
+* thumbnail image requests are not done over SSL (can this be fixed?)
 
 ## License
 
