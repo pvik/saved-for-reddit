@@ -20,6 +20,7 @@ This is a javascript application that runs completely in the users browser, no u
 * If your reddit preference is set to not display NSFW thumnails, then a placeholder NSFW thumnail will be displayed
 * Link to comments to saved posts
 * Comment count on posts is diplayed
+* Export all your saved posts into a csv file
 
 ## TODO
 
@@ -27,7 +28,6 @@ This is a javascript application that runs completely in the users browser, no u
 * better error processing
     * try to refresh api token first if 401 is received
 * clear out subreddit filter, when the last subreddit filter is unselected
-* add an export as csv/html file to export all the saved posts as a static file
 * thumbnail image requests are not done over SSL (can this be fixed?)
 
 ## License

@@ -63,10 +63,30 @@
 (def subreddits (r/atom {}))
 (def get-posts? (r/atom true))
 (def display-subreddit-filter-btn? (r/atom false))
+(def csv-string (r/atom ""))
 
 (defn clear-and-refresh-app []
   (alandipert.storage-atom/remove-local-storage! :saved-for-reddit-app-state)
   (set! (.-location js/window) "/"))
+
+(defn gen-csv-string []
+  (reset!
+   csv-string
+   (.encodeURIComponent
+    js/window
+    (let [post-keys [:title :url :subreddit :nsfw :body :id]]
+      ;; [post-keys (keys ((first (keys @saved-posts)) @saved-posts))]
+      (reduce (fn [csv-string post-name]
+                (str
+                 csv-string "\n"
+                 (let [post (post-name @saved-posts)]
+                   (reduce (fn [strng post-attr]
+                             (str "\"" (post-attr post) "\"," strng))
+                           ""
+                           post-keys)) ))
+              (reduce (fn [s k] (str "\"" (name k) "\"," s)) "" post-keys)
+              (keys @saved-posts))))))
+
 
 ;; generate the URL for Reddit API OAuth
 (defn reddit-auth-url [client-id redirect-uri state]

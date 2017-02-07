@@ -99,7 +99,11 @@
     [:button {:id "btn-stop-get-posts" :type "submit" :class "btn btn-primary btn-xs"
               :on-click (fn []
                           (swap! saved-for-reddit.core/get-posts? not))}
-     [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]]
+     [:span {:class "glyphicon glyphicon-ban-circle" :aria-hidden "true"}]]
+    [:a {:target "_blank" :download "reddit-saved-posts.csv"
+         :href (str "data:attachment/csv," @saved-for-reddit.core/csv-string)  }
+     [:span {:class "badge"} "export as csv"]]
+    ]
    [:div {:class "row"}
     [:div {:class "col-md-9"}
      [:div {:class "list-group"}

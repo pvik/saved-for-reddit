@@ -128,9 +128,10 @@
 (defn update-view-after-retreive-complete []
   (set! ( .-visibility (.-style (dommy/sel1 :#btn-stop-get-posts))) "hidden")
   (set! ( .-visibility (.-style (dommy/sel1 :#loading-gif))) "hidden")
-  (set! (.-disabled (dommy/sel1 :#btn-search-posts)) false)
-  (set! (.-disabled (dommy/sel1 :#txt-search-posts)) false)
-  (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search..."))
+  (set! (.-disabled (dommy/sel1 :#btn-search-posts)) true)
+  (set! (.-disabled (dommy/sel1 :#txt-search-posts)) true)
+  (set! (.-placeholder (dommy/sel1 :#txt-search-posts)) "Search...")
+  (saved-for-reddit.core/gen-csv-string))
 
 (defn get-all-saved-posts [token username saved-posts]
   (let [callback (chan)]
