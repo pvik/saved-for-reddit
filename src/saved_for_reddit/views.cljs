@@ -82,7 +82,7 @@
 (defn search-bar-html []
   [:form {:class "navbar-form navbar-left" :role "search"}
    [:div {:class "form-group"}
-    [:input {:id "txt-search-posts" :type "text" :class "form-control" :placeholder "Loading..." :disabled true}]]
+    [:input {:id "txt-search-posts" :type "text" :class "form-control" :placeholder "Ctrl + F" :disabled true}]]
    [:button {:id "btn-search-posts" :type "submit" :class "btn btn-primary" :disabled true}
     [:span {:class "glyphicon glyphicon-search" :aria-hidden "true"}]]
    [:button {:id "btn-refresh" :type "submit" :class "btn btn-primary"
